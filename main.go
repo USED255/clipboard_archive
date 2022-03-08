@@ -27,7 +27,11 @@ func main() {
 		log.Fatal(err)
 	}
 	db.AutoMigrate(&ClipboardItem{})
+
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	// Private network IPv4 CIDR
+	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
 	api := r.Group("/api/v1")
 	api.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

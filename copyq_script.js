@@ -16,14 +16,14 @@ function main(){
     if (hasBigData()) {
         return;
     }
-    x_item = getItem(0);
-    x_data = toBase64(pack(x_item));
-    x_hash = sha256sum(x_data);
-    x_time = parseInt(str(x_item["application/x-copyq-user-copy-time"]));
-    x_text = str(x_item[mimeText]);
-    x_object = {"x_time": x_time, "x_text": x_text, "x_hash": x_hash,"x_data": x_data};
-    x_json = JSON.stringify(x_object);
-    url = "http://localhost:8088/api/v1/items";
-    networkPost(url,x_json).data;
+    ClipboardItem = getItem(0);
+    ClipboardItemData = toBase64(pack(ClipboardItem));
+    ClipboardItemHash = sha256sum(ClipboardItemData);
+    ClipboardItemTime = parseInt(str(ClipboardItem["application/x-copyq-user-copy-time"]));
+    ClipboardItemText = str(ClipboardItem[mimeText]);
+    ClipboardItemObject = {"ClipboardItemTime":ClipboardItemTime, "ClipboardItemText":ClipboardItemText, "ClipboardItemHash":ClipboardItemHash, "ClipboardItemData":ClipboardItemData};
+    ClipboardItemJson = JSON.stringify(ClipboardItemObject);
+    url = "http://localhost:8080/api/v1/ClipboardItem";
+    networkPost(url,ClipboardItemJson).data;
 }
 main()

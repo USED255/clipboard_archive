@@ -1,81 +1,49 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	_ "modernc.org/sqlite"
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 )
 
-var db *sql.DB
+var db *gorm.DB
 var err error
 
+type ClipboardItem struct {
+	gorm.Model
+	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"`
+	ClipboardItemText string `json:"ClipboardItemText"`
+	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
+	ClipboardItemData string `json:"ClipboardItemData"`
+}
+
 func main() {
-	openDatabase()
-	defer db.Close()
-	go webServer()
-	defer log.Println("再见👋")
-	db.Exec(`CREATE VIRTUAL TABLE email USING fts5(sender, title, body)`)
-	select {}
-}
-
-func initializeDatabase() {
-	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)")
-
+	db, err = gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	_, err = statement.Exec()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	json_string, err := json.Marshal(map[string]interface{}{"a": "a"})
-	if err != nil {
-		log.Fatal(err)
-	}
-	query := fmt.Sprintf(`INSERT OR IGNORE INTO config (key, value) VALUES ('test', json('%s'))`, json_string)
-	statement, err = db.Prepare(query)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = statement.Exec()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func openDatabase() {
-	db, err = sql.Open("sqlite", "./database.db")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	initializeDatabase()
-}
-
-func webServer() {
-	// gin.SetMode(gin.ReleaseMode)
+	db.AutoMigrate(&ClipboardItem{})
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
+	api := r.Group("/api/v1")
+	api.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
-	err = r.Run() // listen and serve on
+	api.POST("/ClipboardItem", insertClipboardItem)
+	r.Run() // 监听并在 0.0.0.0:8080 上启动服务
+}
+
+func insertClipboardItem(c *gin.Context) {
+	var item ClipboardItem
+	err = c.BindJSON(&item)
 	if err != nil {
-		log.Fatal(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
+	db.Create(&item)
+	c.JSON(http.StatusOK, item)
 }

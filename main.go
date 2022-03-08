@@ -31,6 +31,7 @@ func main() {
 	api := r.Group("/api/v1")
 	api.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
 			"message": "pong",
 		})
 	})
@@ -43,11 +44,15 @@ func insertClipboardItem(c *gin.Context) {
 	var item ClipboardItem
 	err = c.BindJSON(&item)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid JSON", "error": err.Error()})
 		return
 	}
-	db.Create(&item)
-	c.JSON(http.StatusOK, item)
+	tx := db.Create(&item)
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error inserting ClipboardItem", "error": tx.Error.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"status": http.StatusCreated, "message": "ClipboardItem created successfully", "ClipboardItem": item})
 }
 
 func getClipboardItem(c *gin.Context) {
@@ -67,17 +72,17 @@ func getClipboardItem(c *gin.Context) {
 	} else {
 		limit, err = strconv.Atoi(_limit)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid limit", "error": err.Error()})
 			return
 		}
 	}
 
-	tx := db.Limit(limit)
+	tx := db.Limit(limit).Order("ClipboardItemTime desc")
 
 	if _start_timestamp != "" {
 		t, err := strconv.Atoi(_end_timestamp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid startTimestamp", "error": err.Error()})
 			return
 		}
 		startTimestamp = int64(t)
@@ -87,7 +92,7 @@ func getClipboardItem(c *gin.Context) {
 	if _end_timestamp != "" {
 		t, err := strconv.Atoi(_end_timestamp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid endTimestamp", "error": err.Error()})
 			return
 		}
 		endTimestamp = int64(t)
@@ -95,9 +100,10 @@ func getClipboardItem(c *gin.Context) {
 	}
 
 	tx.Find(&items)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
+		return
 	}
-	c.JSON(http.StatusOK, items)
+
+	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "ClipboardItem found successfully", "ClipboardItem": items})
 }

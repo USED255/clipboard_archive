@@ -1,6 +1,8 @@
 copyq:
 
-var minBytes = 250*1000
+var minBytes = 250*1000;
+var url = "https://127.0.0.1:8080/api/v1/ClipboardItem";
+
 function hasBigData() {
     var itemSize = 0
     var formats = dataFormats()
@@ -23,7 +25,7 @@ function main(){
     ClipboardItemText = str(ClipboardItem[mimeText]);
     ClipboardItemObject = {"ClipboardItemTime":ClipboardItemTime, "ClipboardItemText":ClipboardItemText, "ClipboardItemHash":ClipboardItemHash, "ClipboardItemData":ClipboardItemData};
     ClipboardItemJson = JSON.stringify(ClipboardItemObject);
-    url = "http://localhost:8080/api/v1/ClipboardItem";
     networkPost(url,ClipboardItemJson).data;
 }
+
 main()

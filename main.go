@@ -15,23 +15,23 @@ var err error
 
 type ClipboardItem struct {
 	gorm.Model
-	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"`
+	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"` // unix milliseconds timestamp
 	ClipboardItemText string `json:"ClipboardItemText"`
 	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
 	ClipboardItemData string `json:"ClipboardItemData"`
 }
 
 func main() {
-	db, err = gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
+	db, err = gorm.Open(sqlite.Open("clipboard_archive_backend.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	db.AutoMigrate(&ClipboardItem{})
 
-//	gin.SetMode(gin.ReleaseMode)
+	//	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	// Private network 
-	// IPv4 CIDR 
+	// Private network
+	// IPv4 CIDR
 	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
 	api := r.Group("/api/v1")
 	api.GET("/ping", func(c *gin.Context) {
@@ -91,7 +91,7 @@ func getClipboardItem(c *gin.Context) {
 			return
 		}
 		startTimestamp = int64(t)
-		tx = tx.Where("ClipboardItemTime > ?", startTimestamp)
+		tx = tx.Where("clipboard_item_time > ?", startTimestamp)
 	}
 
 	if _end_timestamp != "" {
@@ -101,7 +101,7 @@ func getClipboardItem(c *gin.Context) {
 			return
 		}
 		endTimestamp = int64(t)
-		tx.Where("ClipboardItemTime <= ?", endTimestamp)
+		tx.Where("clipboard_item_time <= ?", endTimestamp)
 	}
 
 	tx.Find(&items)

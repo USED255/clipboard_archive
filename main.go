@@ -82,7 +82,7 @@ func getClipboardItem(c *gin.Context) {
 		}
 	}
 
-	tx := db.Limit(limit).Order("ClipboardItemTime desc")
+	tx := db.Limit(limit).Order("clipboard_item_time desc")
 
 	if _start_timestamp != "" {
 		t, err := strconv.Atoi(_end_timestamp)

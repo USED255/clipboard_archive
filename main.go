@@ -40,6 +40,13 @@ func main() {
 			"message": "pong",
 		})
 	})
+	api.GET("/version", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"version": "1.1.8",
+			"message": "version 1.1.8",
+		})
+	})
 	api.POST("/ClipboardItem", insertClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
 	r.Run() // 监听并在 0.0.0.0:8080 上启动服务
@@ -54,6 +61,10 @@ func insertClipboardItem(c *gin.Context) {
 	}
 	tx := db.Create(&item)
 	if tx.Error != nil {
+		if tx.Error.Error() == "constraint failed: UNIQUE constraint failed: clipboard_items.clipboard_item_hash (2067)" {
+			c.JSON(http.StatusConflict, gin.H{"status": http.StatusConflict, "message": "ClipboardItem already exists"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error inserting ClipboardItem", "error": tx.Error.Error()})
 		return
 	}

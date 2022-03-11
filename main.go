@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,11 +12,18 @@ import (
 	"gorm.io/gorm"
 )
 
+const version = "1.1.8"
+
 var db *gorm.DB
 var err error
 
+type Config struct {
+	Key   string `gorm:"primary_key"`
+	Value string
+}
+
 type ClipboardItem struct {
-	gorm.Model
+	gorm.Model               // 弃用或者是可有可无
 	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"` // unix milliseconds timestamp
 	ClipboardItemText string `json:"ClipboardItemText"`
 	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
@@ -22,12 +31,8 @@ type ClipboardItem struct {
 }
 
 func main() {
-	db, err = gorm.Open(sqlite.Open("clipboard_archive_backend.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	db.AutoMigrate(&ClipboardItem{})
-
+	connectDatabase()
+	migrateVersion()
 	//	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	// Private network
@@ -43,8 +48,8 @@ func main() {
 	api.GET("/version", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  http.StatusOK,
-			"version": "1.1.8",
-			"message": "version 1.1.8",
+			"version": version,
+			"message": fmt.Sprintf("version %s", version),
 		})
 	})
 	api.POST("/ClipboardItem", insertClipboardItem)
@@ -122,4 +127,37 @@ func getClipboardItem(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "ClipboardItem found successfully", "ClipboardItem": items})
+}
+
+func connectDatabase() {
+	var count int64
+	db, err = gorm.Open(sqlite.Open("clipboard_archive_backend.db"), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	db.AutoMigrate(&ClipboardItem{}, &Config{})
+	db.Model(&Config{}).Count(&count)
+	if count == 0 {
+		db.Create(&Config{Key: "version", Value: version})
+	}
+}
+
+func migrateVersion() {
+	var config Config
+	err = db.First(&config, "version").Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Fatal("数据不一致")
+		} else {
+			log.Fatal(err)
+		}
+	}
+	switch config.Value {
+	case version:
+		return
+	case "1.1.7":
+		log.Fatal("You are kidding me ?")
+	default:
+		log.Fatal("数据不一致")
+	}
 }

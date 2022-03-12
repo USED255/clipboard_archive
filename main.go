@@ -23,7 +23,7 @@ type Config struct {
 }
 
 type ClipboardItem struct {
-	gorm.Model               // 弃用或者是可有可无
+	gorm.Model               // 可有可无
 	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"` // unix milliseconds timestamp
 	ClipboardItemText string `json:"ClipboardItemText"`
 	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
@@ -54,7 +54,7 @@ func main() {
 	})
 	api.POST("/ClipboardItem", insertClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
-	r.Run() // 监听并在 0.0.0.0:8080 上启动服务
+	r.Run(":8080") // 监听并在 0.0.0.0:8080 上启动服务
 }
 
 func insertClipboardItem(c *gin.Context) {
@@ -101,22 +101,20 @@ func getClipboardItem(c *gin.Context) {
 	tx := db.Limit(limit).Order("clipboard_item_time desc")
 
 	if _start_timestamp != "" {
-		t, err := strconv.Atoi(_end_timestamp)
+		startTimestamp, err = strconv.ParseInt(_end_timestamp, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid startTimestamp", "error": err.Error()})
 			return
 		}
-		startTimestamp = int64(t)
 		tx = tx.Where("clipboard_item_time > ?", startTimestamp)
 	}
 
 	if _end_timestamp != "" {
-		t, err := strconv.Atoi(_end_timestamp)
+		endTimestamp, err = strconv.ParseInt(_end_timestamp, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid endTimestamp", "error": err.Error()})
 			return
 		}
-		endTimestamp = int64(t)
 		tx.Where("clipboard_item_time <= ?", endTimestamp)
 	}
 
@@ -139,12 +137,35 @@ func connectDatabase() {
 	db.Model(&Config{}).Count(&count)
 	if count == 0 {
 		db.Create(&Config{Key: "version", Value: version})
+		Query := `
+CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time, tokenize = "unicode61");
+
+CREATE TRIGGER clipboard_items_fts_after_insert AFTER INSERT ON clipboard_items
+    BEGIN
+        INSERT INTO clipboard_items_fts (clipboard_item_time, clipboard_item_text)
+        VALUES (new.clipboard_item_time, new.clipboard_item_text);
+    END;
+
+CREATE TRIGGER clipboard_items_fts_after_delete AFTER DELETE ON clipboard_items
+    BEGIN
+        DELETE FROM clipboard_items_fts WHERE clipboard_item_time = old.clipboard_item_time;
+    END;
+
+CREATE TRIGGER clipboard_items_fts_after_update AFTER UPDATE ON clipboard_items
+    BEGIN
+        UPDATE clipboard_items_fts SET clipboard_item_text = new.clipboard_item_text WHERE clipboard_item_time = old.clipboard_item_time;
+    END;
+`
+		err := db.Exec(Query).Error
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func migrateVersion() {
 	var config Config
-	err = db.First(&config, "version").Error
+	err = db.First(&config, "key = ?", "version").Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Fatal("数据不一致")
@@ -156,7 +177,7 @@ func migrateVersion() {
 	case version:
 		return
 	case "1.1.7":
-		log.Fatal("You are kidding me ?")
+		log.Fatal("Are you kidding me ?")
 	default:
 		log.Fatal("数据不一致")
 	}

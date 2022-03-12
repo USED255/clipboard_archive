@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const version = "1.1.8"
+const version = "1.1.9"
 
 var db *gorm.DB
 var err error
@@ -160,6 +160,38 @@ func migrateVersion() {
 	switch config.Value {
 	case version:
 		return
+	case "1.1.8":
+		log.Println("Migrating to 1.1.9")
+		Query := `
+CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
+clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time, tokenize = "unicode61");
+
+CREATE TRIGGER clipboard_items_fts_after_insert AFTER INSERT ON clipboard_items
+    BEGIN
+        INSERT INTO clipboard_items_fts (clipboard_item_time, clipboard_item_text)
+        VALUES (new.clipboard_item_time, new.clipboard_item_text);
+    END;
+
+CREATE TRIGGER clipboard_items_fts_after_delete AFTER DELETE ON clipboard_items
+    BEGIN
+        DELETE FROM clipboard_items_fts WHERE clipboard_item_time = old.clipboard_item_time;
+    END;
+
+CREATE TRIGGER clipboard_items_fts_after_update AFTER UPDATE ON clipboard_items
+    BEGIN
+        UPDATE clipboard_items_fts SET clipboard_item_text = new.clipboard_item_text WHERE clipboard_item_time = old.clipboard_item_time;
+    END;
+
+INSERT INTO clipboard_items_fts (clipboard_item_time, clipboard_item_text) 
+VALUES (clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text) FROM clipboard_items;
+`
+		tx := db.Begin()
+		err := tx.Exec(Query).Error
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+		tx.Commit()
 	case "1.1.7":
 		log.Fatal("Are you kidding me ?")
 	default:

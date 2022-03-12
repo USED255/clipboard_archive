@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -31,30 +34,11 @@ type ClipboardItem struct {
 }
 
 func main() {
+	log.Println("Welcome 🐱‍🏍")
 	connectDatabase()
 	migrateVersion()
-	//	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
-	// Private network
-	// IPv4 CIDR
-	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
-	api := r.Group("/api/v1")
-	api.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"message": "pong",
-		})
-	})
-	api.GET("/version", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"version": version,
-			"message": fmt.Sprintf("version %s", version),
-		})
-	})
-	api.POST("/ClipboardItem", insertClipboardItem)
-	api.GET("/ClipboardItem", getClipboardItem)
-	r.Run(":8080") // 监听并在 0.0.0.0:8080 上启动服务
+	go webServer()
+	awaitSignalAndExit()
 }
 
 func insertClipboardItem(c *gin.Context) {
@@ -181,4 +165,38 @@ func migrateVersion() {
 	default:
 		log.Fatal("数据不一致")
 	}
+}
+
+func webServer() {
+	//	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
+	// Private network
+	// IPv4 CIDR
+	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
+	api := r.Group("/api/v1")
+	api.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "pong",
+		})
+	})
+	api.GET("/version", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"version": version,
+			"message": fmt.Sprintf("version %s", version),
+		})
+	})
+	api.POST("/ClipboardItem", insertClipboardItem)
+	api.GET("/ClipboardItem", getClipboardItem)
+	//r.Run(":8080") // 监听并在 0.0.0.0:8080 上启动服务
+	r.Run(":8888") // 监听并在 0.0.0.0:8888 上启动服务
+}
+
+func awaitSignalAndExit() {
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGINT)
+	<-s
+	log.Println("Bey 🐱‍👤")
+	os.Exit(0)
 }

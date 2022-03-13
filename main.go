@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const version = "1.1.9"
+const version = "1.2.0"
 
 var db *gorm.DB
 var err error
@@ -103,7 +102,8 @@ func getClipboardItem(c *gin.Context) {
 	}
 	if search != "" {
 		log.Println("Searching for: " + search)
-		tx.Debug().Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
+		tx.Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
+		//tx.Debug().Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
 	} else {
 		tx.Find(&items)
 	}
@@ -150,20 +150,13 @@ END;
 
 func migrateVersion() {
 	var config Config
-	err = db.First(&config, "key = ?", "version").Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Fatal("数据不一致")
-		} else {
-			log.Fatal(err)
-		}
-	}
 migrate:
+	db.First(&config, "key = ?", "version")
 	switch config.Value {
 	case version:
 		return
 	case "1.1.8":
-		log.Println("Migrating to 1.1.9")
+		log.Println("Migrating to 1.2.0")
 		Query := `
 CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
 clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
@@ -184,7 +177,7 @@ END;
 INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
 SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text FROM clipboard_items;
 
-UPDATE configs SET value = '1.1.9' WHERE key = 'version';
+UPDATE configs SET value = '1.2.0' WHERE key = 'version';
 `
 		tx := db.Begin()
 		err := tx.Exec(Query).Error
@@ -197,7 +190,18 @@ UPDATE configs SET value = '1.1.9' WHERE key = 'version';
 	case "1.1.7":
 		log.Fatal("Are you kidding me ?")
 	default:
-		log.Fatal("数据不一致")
+		log.Println("Migrating to 1.1.8")
+		Query := `
+INSERT INTO "configs" ("key", "value") VALUES ('version', '1.1.8');
+`
+		tx := db.Begin()
+		err := tx.Exec(Query).Error
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+		tx.Commit()
+		goto migrate
 	}
 }
 
@@ -223,8 +227,11 @@ func webServer() {
 	})
 	api.POST("/ClipboardItem", insertClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
-	//r.Run(":8080") // 监听并在 0.0.0.0:8080 上启动服务
-	r.Run(":8888") // 监听并在 0.0.0.0:8888 上启动服务
+	err = r.Run(":8080") // 监听并在 0.0.0.0:8080 上启动服务
+	if err != nil {
+		log.Fatal(err)
+	}
+	//r.Run(":8888") // 监听并在 0.0.0.0:8888 上启动服务
 }
 
 func awaitSignalAndExit() {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,7 +37,9 @@ func main() {
 	log.Println("Welcome 🐱‍🏍")
 	connectDatabase()
 	migrateVersion()
-	go webServer()
+	bindFlagPtr := flag.String("bind", ":8080", "Bind address")
+	flag.Parse()
+	go webServer(bindFlagPtr)
 	awaitSignalAndExit()
 }
 
@@ -150,11 +153,14 @@ END;
 
 func migrateVersion() {
 	var config Config
+
 migrate:
 	db.First(&config, "key = ?", "version")
+
 	switch config.Value {
 	case version:
 		return
+
 	case "1.1.8":
 		log.Println("Migrating to 1.2.0")
 		Query := `
@@ -187,9 +193,8 @@ UPDATE configs SET value = '1.2.0' WHERE key = 'version';
 		}
 		tx.Commit()
 		goto migrate
-	case "1.1.7":
-		log.Fatal("Are you kidding me ?")
-	default:
+
+	case "":
 		log.Println("Migrating to 1.1.8")
 		Query := `
 INSERT INTO "configs" ("key", "value") VALUES ('version', '1.1.8');
@@ -202,10 +207,13 @@ INSERT INTO "configs" ("key", "value") VALUES ('version', '1.1.8');
 		}
 		tx.Commit()
 		goto migrate
+
+	default:
+		log.Fatal("Unsupported version: ", config.Value)
 	}
 }
 
-func webServer() {
+func webServer(bindFlagPtr *string) {
 	//	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	// Private network
@@ -227,11 +235,10 @@ func webServer() {
 	})
 	api.POST("/ClipboardItem", insertClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
-	err = r.Run(":8080") // 监听并在 0.0.0.0:8080 上启动服务
+	err = r.Run(*bindFlagPtr) // 监听并在 0.0.0.0:8080 上启动服务
 	if err != nil {
 		log.Fatal(err)
 	}
-	//r.Run(":8888") // 监听并在 0.0.0.0:8888 上启动服务
 }
 
 func awaitSignalAndExit() {

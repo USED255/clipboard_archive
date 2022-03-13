@@ -1,2 +1,4 @@
-database.db
+*.db
 *.exe
+*.1
+.dot

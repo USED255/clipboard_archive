@@ -8,6 +8,6 @@ RUN    cd / \
     && go build
 
 FROM alpine
-RUN apk add --no-cache tzdata 
 CMD [ "/clipboard_archive_backend" ]
+RUN apk add --no-cache tzdata 
 COPY --from=build /clipboard_archive_backend  /clipboard_archive_backend

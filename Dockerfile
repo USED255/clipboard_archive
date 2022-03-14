@@ -1,4 +1,4 @@
-FROM golang:1.16.4-alpine3.12 AS build
+FROM golang AS build
 
 # RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories 
 RUN apk add --no-cache gcc g++ linux-headers  
@@ -11,7 +11,7 @@ RUN    cd / \
 #   && go env -w GOPROXY=https://goproxy.io,direct \
     && go build
 
-FROM alpine:3.12
+FROM alpine
 # RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories 
 RUN apk add --no-cache tzdata 
 CMD [ "/clipboard_archive_backend" ]

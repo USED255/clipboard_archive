@@ -55,7 +55,7 @@ func main() {
 func connectDatabase() {
 	var count int64
 
-	db, err = gorm.Open(sqlite.Open("clipboard_archive_backend.db"), &gorm.Config{})
+	db, err = gorm.Open(sqlite.Open("clipboard_archive.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}

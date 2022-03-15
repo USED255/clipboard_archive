@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -73,13 +74,23 @@ func getClipboardItem(c *gin.Context) {
 	var startTimestamp int64
 	var endTimestamp int64
 	var limit int
+	var count int64
 
 	_startTimestamp := c.Query("startTimestamp")
 	_endTimestamp := c.Query("endTimestamp")
 	_limit := c.Query("limit")
 	search := c.Query("search")
 
+	requestedForm := gin.H{
+		"startTimestamp": _startTimestamp,
+		"endTimestamp":   _endTimestamp,
+		"limit":          _limit,
+		"search":         search,
+	}
+
 	items := []ClipboardItem{}
+
+	functionStartTime := getUnixMillisTimestamp()
 
 	if _limit == "" {
 		limit = 100
@@ -117,12 +128,22 @@ func getClipboardItem(c *gin.Context) {
 	} else {
 		tx.Find(&items)
 	}
+
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "ClipboardItem found successfully", "ClipboardItem": items})
+	tx.Count(&count)
+
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
+		return
+	}
+
+	functionEndTime := getUnixMillisTimestamp()
+
+	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "requested_form": requestedForm, "count": count, "function_start_time": functionStartTime, "function_end_time": functionEndTime, "message": "ClipboardItem found successfully", "ClipboardItem": items})
 }
 
 func connectDatabase() {
@@ -275,4 +296,8 @@ func getMajorVersion(version string) (int, error) {
 		return strconv.Atoi(re.FindStringSubmatch(version)[1])
 	}
 	return 0, errors.New("Invalid version")
+}
+
+func getUnixMillisTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }

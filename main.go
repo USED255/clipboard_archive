@@ -190,6 +190,7 @@ func webServer(bindFlagPtr *string) {
 	api.POST("/ClipboardItem", insertClipboardItem)
 	api.DELETE("/ClipboardItem:id", deleteClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
+	api.GET("/ClipboardItem/:id", takeClipboardItem)
 	api.PUT("/ClipboardItem:id", updateClipboardItem)
 	api.GET("/ClipboardItem/count", getClipboardItemCount)
 
@@ -377,6 +378,34 @@ func getClipboardItem(c *gin.Context) {
 		"function_end_time":   functionEndTime,
 		"message":             "ClipboardItem found successfully",
 		"ClipboardItem":       items,
+	})
+}
+
+func takeClipboardItem(c *gin.Context) {
+	var item ClipboardItem
+
+	id := c.Params.ByName("id")
+	err := db.First(&item, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  http.StatusNotFound,
+				"message": "ClipboardItem not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Error taking ClipboardItem",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":        http.StatusOK,
+		"message":       "ClipboardItem taken successfully",
+		"ClipboardItem": item,
 	})
 }
 

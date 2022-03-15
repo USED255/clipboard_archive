@@ -346,7 +346,7 @@ func getClipboardItem(c *gin.Context) {
 		tx.Limit(limit).Scan(&items)
 		//tx.Debug().Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
 	} else {
-		tx.Count(&count)
+		tx.Model(&items).Count(&count)
 		if tx.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  http.StatusInternalServerError,

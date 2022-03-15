@@ -30,7 +30,7 @@ type Config struct {
 
 type ClipboardItem struct {
 	gorm.Model               // 可有可无
-	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"` // unix milliseconds timestamp
+	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"` // unix milliseconds timestamp // 真正的主键
 	ClipboardItemText string `json:"ClipboardItemText"`
 	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
 	ClipboardItemData string `json:"ClipboardItemData"`
@@ -190,7 +190,7 @@ func webServer(bindFlagPtr *string) {
 	api.POST("/ClipboardItem", insertClipboardItem)
 	api.DELETE("/ClipboardItem:id", deleteClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
-	api.GET("/ClipboardItem/:id", takeClipboardItem)
+	api.GET("/ClipboardItem/:id", takeClipboardItem) // 使用的是 gorm.Model 的 ID, 我也不知道有什么用但是看起来很美观
 	api.PUT("/ClipboardItem:id", updateClipboardItem)
 	api.GET("/ClipboardItem/count", getClipboardItemCount)
 

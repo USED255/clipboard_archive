@@ -188,7 +188,9 @@ func webServer(bindFlagPtr *string) {
 		})
 	})
 	api.POST("/ClipboardItem", insertClipboardItem)
+	api.DELETE("/ClipboardItem:id", deleteClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
+	api.PUT("/ClipboardItem:id", updateClipboardItem)
 	api.GET("/ClipboardItem/count", getClipboardItemCount)
 
 	err := r.Run(*bindFlagPtr)
@@ -231,6 +233,34 @@ func insertClipboardItem(c *gin.Context) {
 		"status":        http.StatusCreated,
 		"message":       "ClipboardItem created successfully",
 		"ClipboardItem": item,
+	})
+}
+
+func deleteClipboardItem(c *gin.Context) {
+	var item ClipboardItem
+
+	id := c.Params.ByName("id")
+	err := db.Where("clipboard_item_time = ?", id).Delete(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  http.StatusNotFound,
+				"message": "ClipboardItem not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Error deleting ClipboardItem",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "ClipboardItem deleted successfully",
+		"id":      id,
 	})
 }
 
@@ -348,6 +378,57 @@ func getClipboardItem(c *gin.Context) {
 		"message":             "ClipboardItem found successfully",
 		"ClipboardItem":       items,
 	})
+}
+
+func updateClipboardItem(c *gin.Context) {
+	var item ClipboardItem
+
+	_id := c.Params.ByName("id")
+	id, err := strconv.ParseInt(_id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Invalid id",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	err = db.Where("clipboard_item_time = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  http.StatusNotFound,
+				"message": "ClipboardItem not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Error updating ClipboardItem",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	if c.BindJSON(&item) == nil {
+		item.ClipboardItemTime = id
+		err = db.Save(&item).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  http.StatusInternalServerError,
+				"message": "Error updating ClipboardItem",
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":        http.StatusOK,
+			"message":       "ClipboardItem updated successfully",
+			"ClipboardItem": item,
+		})
+	}
 }
 
 func getClipboardItemCount(c *gin.Context) {

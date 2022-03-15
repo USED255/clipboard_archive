@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"syscall"
 
@@ -15,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const version = "1.2.0"
+const version = "2.0.0"
 
 var db *gorm.DB
 var err error
@@ -153,16 +155,29 @@ END;
 
 func migrateVersion() {
 	var config Config
+	var configMajorVersion int
+	currentMajorVersion, err := getMajorVersion(version)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 migrate:
 	db.First(&config, "key = ?", "version")
+	if config.Key == "" {
+		configMajorVersion = 0
+	} else {
+		configMajorVersion, err = getMajorVersion(config.Value)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
-	switch config.Value {
-	case version:
+	switch configMajorVersion {
+	case currentMajorVersion:
 		return
 
-	case "1.1.8":
-		log.Println("Migrating to 1.2.0")
+	case 1:
+		log.Println("Migrating to 2.0.0")
 		Query := `
 CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
 clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
@@ -183,7 +198,7 @@ END;
 INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
 SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text FROM clipboard_items;
 
-UPDATE configs SET value = '1.2.0' WHERE key = 'version';
+UPDATE configs SET value = '2.0.0' WHERE key = 'version';
 `
 		tx := db.Begin()
 		err := tx.Exec(Query).Error
@@ -194,10 +209,10 @@ UPDATE configs SET value = '1.2.0' WHERE key = 'version';
 		tx.Commit()
 		goto migrate
 
-	case "":
-		log.Println("Migrating to 1.1.8")
+	case 0:
+		log.Println("Migrating to 1.0.0")
 		Query := `
-INSERT INTO "configs" ("key", "value") VALUES ('version', '1.1.8');
+INSERT INTO "configs" ("key", "value") VALUES ('version', '1.0.0');
 `
 		tx := db.Begin()
 		err := tx.Exec(Query).Error
@@ -247,4 +262,12 @@ func awaitSignalAndExit() {
 	<-s
 	log.Println("Bey 🐱‍👤")
 	os.Exit(0)
+}
+
+func getMajorVersion(version string) (int, error) {
+	re := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
+	if re.MatchString(version) {
+		return strconv.Atoi(re.FindStringSubmatch(version)[1])
+	}
+	return 0, errors.New("Invalid version")
 }

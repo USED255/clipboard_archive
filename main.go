@@ -44,6 +44,7 @@ func main() {
 		fmt.Println(version)
 		os.Exit(0)
 	}
+
 	log.Println("Welcome 🐱‍🏍")
 	connectDatabase()
 	migrateVersion()
@@ -53,21 +54,39 @@ func main() {
 
 func insertClipboardItem(c *gin.Context) {
 	var item ClipboardItem
-	err = c.BindJSON(&item)
+
+	err := c.BindJSON(&item)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid JSON", "error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Invalid JSON",
+			"error":   err.Error(),
+		})
 		return
 	}
+
 	tx := db.Create(&item)
 	if tx.Error != nil {
 		if tx.Error.Error() == "constraint failed: UNIQUE constraint failed: clipboard_items.clipboard_item_hash (2067)" {
-			c.JSON(http.StatusConflict, gin.H{"status": http.StatusConflict, "message": "ClipboardItem already exists"})
+			c.JSON(http.StatusConflict, gin.H{
+				"status":  http.StatusConflict,
+				"message": "ClipboardItem already exists",
+			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error inserting ClipboardItem", "error": tx.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Error inserting ClipboardItem",
+			"error":   tx.Error.Error(),
+		})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"status": http.StatusCreated, "message": "ClipboardItem created successfully", "ClipboardItem": item})
+
+	c.JSON(http.StatusCreated, gin.H{
+		"status":        http.StatusCreated,
+		"message":       "ClipboardItem created successfully",
+		"ClipboardItem": item,
+	})
 }
 
 func getClipboardItem(c *gin.Context) {
@@ -97,7 +116,11 @@ func getClipboardItem(c *gin.Context) {
 	} else {
 		limit, err = strconv.Atoi(_limit)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid limit", "error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid limit",
+				"error":   err.Error(),
+			})
 			return
 		}
 	}
@@ -107,7 +130,11 @@ func getClipboardItem(c *gin.Context) {
 	if _startTimestamp != "" {
 		startTimestamp, err = strconv.ParseInt(_startTimestamp, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid startTimestamp", "error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid startTimestamp",
+				"error":   err.Error(),
+			})
 			return
 		}
 		tx.Where("clipboard_item_time <= ?", startTimestamp)
@@ -116,16 +143,29 @@ func getClipboardItem(c *gin.Context) {
 	if _endTimestamp != "" {
 		endTimestamp, err = strconv.ParseInt(_endTimestamp, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid endTimestamp", "error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid endTimestamp",
+				"error":   err.Error(),
+			})
 			return
 		}
 		tx.Where("clipboard_item_time >= ?", endTimestamp)
 	}
+
 	if search != "" {
 		//log.Println("Searching for: " + search)
-		tx.Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Count(&count)
+		tx.
+			Table("clipboard_items_fts").
+			Where("clipboard_items_fts MATCH ?", search).
+			Joins("NATURAL JOIN clipboard_items").
+			Count(&count)
 		if tx.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  http.StatusInternalServerError,
+				"message": "Error getting ClipboardItem",
+				"error":   tx.Error.Error(),
+			})
 			return
 		}
 		tx.Limit(limit).Scan(&items)
@@ -133,29 +173,50 @@ func getClipboardItem(c *gin.Context) {
 	} else {
 		tx.Count(&count)
 		if tx.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  http.StatusInternalServerError,
+				"message": "Error getting ClipboardItem",
+				"error":   tx.Error.Error(),
+			})
 			return
 		}
 		tx.Limit(limit).Find(&items)
 	}
 
 	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Error getting ClipboardItem",
+			"error":   tx.Error.Error(),
+		})
 		return
 	}
 
 	functionEndTime := getUnixMillisTimestamp()
 
-	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "requested_form": requestedForm, "count": count, "function_start_time": functionStartTime, "function_end_time": functionEndTime, "message": "ClipboardItem found successfully", "ClipboardItem": items})
+	c.JSON(http.StatusOK, gin.H{
+		"status":              http.StatusOK,
+		"requested_form":      requestedForm,
+		"count":               count,
+		"function_start_time": functionStartTime,
+		"function_end_time":   functionEndTime,
+		"message":             "ClipboardItem found successfully",
+		"ClipboardItem":       items,
+	})
 }
 
 func connectDatabase() {
 	var count int64
+
 	db, err = gorm.Open(sqlite.Open("clipboard_archive_backend.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.AutoMigrate(&ClipboardItem{}, &Config{})
+	err := db.AutoMigrate(&ClipboardItem{}, &Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	db.Model(&ClipboardItem{}).Count(&count)
 	if count == 0 {
 		db.Create(&Config{Key: "version", Value: version})
@@ -185,6 +246,7 @@ END;
 func migrateVersion() {
 	var config Config
 	var configMajorVersion int
+
 	currentMajorVersion, err := getMajorVersion(version)
 	if err != nil {
 		log.Fatal(err)
@@ -263,6 +325,7 @@ func webServer(bindFlagPtr *string) {
 	// Private network
 	// IPv4 CIDR
 	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
+
 	api := r.Group("/api/v1")
 	api.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -279,7 +342,9 @@ func webServer(bindFlagPtr *string) {
 	})
 	api.POST("/ClipboardItem", insertClipboardItem)
 	api.GET("/ClipboardItem", getClipboardItem)
-	err = r.Run(*bindFlagPtr)
+	api.GET("/ClipboardItem/count", getClipboardItemCount)
+
+	err := r.Run(*bindFlagPtr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -303,4 +368,23 @@ func getMajorVersion(version string) (int, error) {
 
 func getUnixMillisTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+func getClipboardItemCount(c *gin.Context) {
+	var count int64
+
+	db.Model(&ClipboardItem{}).Count(&count)
+	if db.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": db.Error.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"count":   count,
+		"message": fmt.Sprintf("%d items in clipboard", count),
+	})
 }

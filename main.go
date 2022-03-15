@@ -67,8 +67,8 @@ func getClipboardItem(c *gin.Context) {
 	var endTimestamp int64
 	var limit int
 
-	_start_timestamp := c.Query("startTimestamp")
-	_end_timestamp := c.Query("endTimestamp")
+	_startTimestamp := c.Query("startTimestamp")
+	_endTimestamp := c.Query("endTimestamp")
 	_limit := c.Query("limit")
 	search := c.Query("search")
 
@@ -86,8 +86,8 @@ func getClipboardItem(c *gin.Context) {
 
 	tx := db.Limit(limit).Order("clipboard_item_time desc")
 
-	if _start_timestamp != "" {
-		startTimestamp, err = strconv.ParseInt(_start_timestamp, 10, 64)
+	if _startTimestamp != "" {
+		startTimestamp, err = strconv.ParseInt(_startTimestamp, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid startTimestamp", "error": err.Error()})
 			return
@@ -95,8 +95,8 @@ func getClipboardItem(c *gin.Context) {
 		tx.Where("clipboard_item_time <= ?", startTimestamp)
 	}
 
-	if _end_timestamp != "" {
-		endTimestamp, err = strconv.ParseInt(_end_timestamp, 10, 64)
+	if _endTimestamp != "" {
+		endTimestamp, err = strconv.ParseInt(_endTimestamp, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "message": "Invalid endTimestamp", "error": err.Error()})
 			return
@@ -104,7 +104,7 @@ func getClipboardItem(c *gin.Context) {
 		tx.Where("clipboard_item_time >= ?", endTimestamp)
 	}
 	if search != "" {
-		log.Println("Searching for: " + search)
+		//log.Println("Searching for: " + search)
 		tx.Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
 		//tx.Debug().Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
 	} else {

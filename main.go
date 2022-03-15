@@ -102,7 +102,7 @@ func getClipboardItem(c *gin.Context) {
 		}
 	}
 
-	tx := db.Limit(limit).Order("clipboard_item_time desc")
+	tx := db.Order("clipboard_item_time desc")
 
 	if _startTimestamp != "" {
 		startTimestamp, err = strconv.ParseInt(_startTimestamp, 10, 64)
@@ -123,18 +123,21 @@ func getClipboardItem(c *gin.Context) {
 	}
 	if search != "" {
 		//log.Println("Searching for: " + search)
-		tx.Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
+		tx.Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Count(&count)
+		if tx.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
+			return
+		}
+		tx.Limit(limit).Scan(&items)
 		//tx.Debug().Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
 	} else {
-		tx.Find(&items)
+		tx.Count(&count)
+		if tx.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
+			return
+		}
+		tx.Limit(limit).Find(&items)
 	}
-
-	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
-		return
-	}
-
-	tx.Count(&count)
 
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "message": "Error getting ClipboardItem", "error": tx.Error.Error()})
@@ -295,7 +298,7 @@ func getMajorVersion(version string) (int, error) {
 	if re.MatchString(version) {
 		return strconv.Atoi(re.FindStringSubmatch(version)[1])
 	}
-	return 0, errors.New("Invalid version")
+	return 0, errors.New("invalid version")
 }
 
 func getUnixMillisTimestamp() int64 {

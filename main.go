@@ -385,6 +385,16 @@ func takeClipboardItem(c *gin.Context) {
 	var item ClipboardItem
 
 	id := c.Params.ByName("id")
+	// 最可怕的是这里 GitHub Copilot 猜透了我这里的意图,
+	// 使用了 ClipboardItemTime 做 ID 来进行查询
+	// 他现在甚至在教我写注释
+	// 😱
+	// 但是我还是没有想到这里的意图
+	// 因为我不想把这个 ID 当做一个字符串来使用
+	// 我想这个 ID 应该是一个数字
+	// 我不想把这个 ID 当做一个数字来使用
+	// 我不想把这个 ID 当做一个数字来使用
+	// 别写了别写了
 	err := db.First(&item, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

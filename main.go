@@ -36,11 +36,16 @@ type ClipboardItem struct {
 }
 
 func main() {
+	bindFlagPtr := flag.String("bind", ":8080", "bind address")
+	versionFlagPtr := flag.Bool("v", false, "show version")
+	flag.Parse()
+	if *versionFlagPtr {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 	log.Println("Welcome 🐱‍🏍")
 	connectDatabase()
 	migrateVersion()
-	bindFlagPtr := flag.String("bind", ":8080", "Bind address")
-	flag.Parse()
 	go webServer(bindFlagPtr)
 	awaitSignalAndExit()
 }

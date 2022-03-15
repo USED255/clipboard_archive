@@ -52,6 +52,151 @@ func main() {
 	awaitSignalAndExit()
 }
 
+func connectDatabase() {
+	var count int64
+
+	db, err = gorm.Open(sqlite.Open("clipboard_archive_backend.db"), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err := db.AutoMigrate(&ClipboardItem{}, &Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db.Model(&ClipboardItem{}).Count(&count)
+	if count == 0 {
+		db.Create(&Config{Key: "version", Value: version})
+		Query := `
+CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
+
+CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
+    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
+END;
+
+CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
+    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+END;
+
+CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
+    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
+END;
+`
+		err := db.Exec(Query).Error
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func migrateVersion() {
+	var config Config
+	var configMajorVersion int
+
+	currentMajorVersion, err := getMajorVersion(version)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+migrate:
+	db.First(&config, "key = ?", "version")
+	if config.Key == "" {
+		configMajorVersion = 0
+	} else {
+		configMajorVersion, err = getMajorVersion(config.Value)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	switch configMajorVersion {
+	case currentMajorVersion:
+		return
+
+	case 1:
+		log.Println("Migrating to 2.0.0")
+		Query := `
+CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
+clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
+
+CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
+    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
+END;
+
+CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
+    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+END;
+
+CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
+    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
+END;
+
+INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
+SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text FROM clipboard_items;
+
+UPDATE configs SET value = '2.0.0' WHERE key = 'version';
+`
+		tx := db.Begin()
+		err := tx.Exec(Query).Error
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+		tx.Commit()
+		goto migrate
+
+	case 0:
+		log.Println("Migrating to 1.0.0")
+		Query := `
+INSERT INTO "configs" ("key", "value") VALUES ('version', '1.0.0');
+`
+		tx := db.Begin()
+		err := tx.Exec(Query).Error
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+		tx.Commit()
+		goto migrate
+
+	default:
+		log.Fatal("Unsupported version: ", config.Value)
+	}
+}
+
+func webServer(bindFlagPtr *string) {
+	//	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
+	// Private network
+	// IPv4 CIDR
+	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
+
+	api := r.Group("/api/v1")
+	api.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "pong",
+		})
+	})
+	api.GET("/version", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"version": version,
+			"message": fmt.Sprintf("version %s", version),
+		})
+	})
+	api.POST("/ClipboardItem", insertClipboardItem)
+	api.GET("/ClipboardItem", getClipboardItem)
+	api.GET("/ClipboardItem/count", getClipboardItemCount)
+
+	err := r.Run(*bindFlagPtr)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func insertClipboardItem(c *gin.Context) {
 	var item ClipboardItem
 
@@ -205,149 +350,23 @@ func getClipboardItem(c *gin.Context) {
 	})
 }
 
-func connectDatabase() {
+func getClipboardItemCount(c *gin.Context) {
 	var count int64
 
-	db, err = gorm.Open(sqlite.Open("clipboard_archive_backend.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	err := db.AutoMigrate(&ClipboardItem{}, &Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	db.Model(&ClipboardItem{}).Count(&count)
-	if count == 0 {
-		db.Create(&Config{Key: "version", Value: version})
-		Query := `
-CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
-
-CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-`
-		err := db.Exec(Query).Error
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func migrateVersion() {
-	var config Config
-	var configMajorVersion int
-
-	currentMajorVersion, err := getMajorVersion(version)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-migrate:
-	db.First(&config, "key = ?", "version")
-	if config.Key == "" {
-		configMajorVersion = 0
-	} else {
-		configMajorVersion, err = getMajorVersion(config.Value)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	switch configMajorVersion {
-	case currentMajorVersion:
+	if db.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": db.Error.Error(),
+		})
 		return
-
-	case 1:
-		log.Println("Migrating to 2.0.0")
-		Query := `
-CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
-clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
-
-CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
-INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
-SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text FROM clipboard_items;
-
-UPDATE configs SET value = '2.0.0' WHERE key = 'version';
-`
-		tx := db.Begin()
-		err := tx.Exec(Query).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		tx.Commit()
-		goto migrate
-
-	case 0:
-		log.Println("Migrating to 1.0.0")
-		Query := `
-INSERT INTO "configs" ("key", "value") VALUES ('version', '1.0.0');
-`
-		tx := db.Begin()
-		err := tx.Exec(Query).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		tx.Commit()
-		goto migrate
-
-	default:
-		log.Fatal("Unsupported version: ", config.Value)
 	}
-}
 
-func webServer(bindFlagPtr *string) {
-	//	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
-	// Private network
-	// IPv4 CIDR
-	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
-
-	api := r.Group("/api/v1")
-	api.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"message": "pong",
-		})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"count":   count,
+		"message": fmt.Sprintf("%d items in clipboard", count),
 	})
-	api.GET("/version", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"version": version,
-			"message": fmt.Sprintf("version %s", version),
-		})
-	})
-	api.POST("/ClipboardItem", insertClipboardItem)
-	api.GET("/ClipboardItem", getClipboardItem)
-	api.GET("/ClipboardItem/count", getClipboardItemCount)
-
-	err := r.Run(*bindFlagPtr)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func awaitSignalAndExit() {
@@ -368,23 +387,4 @@ func getMajorVersion(version string) (int, error) {
 
 func getUnixMillisTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
-}
-
-func getClipboardItemCount(c *gin.Context) {
-	var count int64
-
-	db.Model(&ClipboardItem{}).Count(&count)
-	if db.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  http.StatusInternalServerError,
-			"message": db.Error.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"count":   count,
-		"message": fmt.Sprintf("%d items in clipboard", count),
-	})
 }

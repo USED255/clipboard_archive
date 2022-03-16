@@ -3,7 +3,7 @@ WORKDIR /
 COPY . /
 RUN    go env -w CGO_ENABLED=0 \
     && go env -w GO111MODULE=on 
-RUN    go build
+RUN    go build -v 
 
 FROM alpine
 RUN apk add --no-cache tzdata 

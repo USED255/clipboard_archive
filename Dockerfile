@@ -7,5 +7,5 @@ RUN    go build
 
 FROM alpine
 RUN apk add --no-cache tzdata 
-CMD [ "/clipboard_archive_backend" ]
-COPY --from=build /clipboard_archive_backend  /clipboard_archive_backend
+CMD [ "/clipboard_archive" ]
+COPY --from=build /clipboard_archive  /clipboard_archive

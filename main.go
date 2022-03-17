@@ -18,7 +18,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const version = "2.0.0"
+const version = "3.0.0"
 
 var db *gorm.DB
 var err error
@@ -29,8 +29,8 @@ type Config struct {
 }
 
 type ClipboardItem struct {
-	gorm.Model               // 可有可无
-	ClipboardItemTime int64  `gorm:"unique" json:"ClipboardItemTime"` // unix milliseconds timestamp // 真正的主键
+	Index             int64  `gorm:"autoIncrement"`
+	ClipboardItemTime int64  `gorm:"primaryKey" json:"ClipboardItemTime"` // unix milliseconds timestamp
 	ClipboardItemText string `json:"ClipboardItemText"`
 	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
 	ClipboardItemData string `json:"ClipboardItemData"`
@@ -53,50 +53,62 @@ func main() {
 }
 
 func connectDatabase() {
-	var count int64
-
 	db, err = gorm.Open(sqlite.Open("clipboard_archive.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	err := db.AutoMigrate(&ClipboardItem{}, &Config{})
+}
+
+func migrateVersion() {
+	var count int64
+	var config Config
+	var configMajorVersion uint64
+
+	CreateFts5TableQuery := `
+	CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
+		clipboard_item_time, 
+		clipboard_item_text, 
+		content = clipboard_items, 
+		content_rowid = clipboard_item_time
+	);
+	
+	CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
+			VALUES (new.clipboard_item_time, new.clipboard_item_text);
+	END;
+	
+	CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
+			VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+	END;
+	
+	CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
+			VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+		INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
+			VALUES (new.clipboard_item_time, new.clipboard_item_text);
+	END;
+`
+
+	currentMajorVersion, err := getMajorVersion(version)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	db.Model(&ClipboardItem{}).Count(&count)
 	if count == 0 {
-		db.Create(&Config{Key: "version", Value: version})
-		Query := `
-CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
-
-CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-`
-		err := db.Exec(Query).Error
+		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-}
-
-func migrateVersion() {
-	var config Config
-	var configMajorVersion int
-
-	currentMajorVersion, err := getMajorVersion(version)
-	if err != nil {
-		log.Fatal(err)
+		err = db.Create(&Config{Key: "version", Value: version}).Error
+		if err != nil {
+			log.Fatal(err)
+		}
+		err := db.Exec(CreateFts5TableQuery).Error
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 migrate:
@@ -114,55 +126,69 @@ migrate:
 	case currentMajorVersion:
 		return
 
+	case 2:
+		log.Println("Migrating to 3.0.0")
+		err := db.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
+		if err != nil {
+			log.Fatal(err)
+		}
+
 	case 1:
 		log.Println("Migrating to 2.0.0")
 		Query := `
-CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
-clipboard_item_time, clipboard_item_text, content = clipboard_items, content_rowid = clipboard_item_time);
-
-CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
-    INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-    INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
 INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
-SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text FROM clipboard_items;
-
-UPDATE configs SET value = '2.0.0' WHERE key = 'version';
+SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
+FROM clipboard_items;
 `
 		tx := db.Begin()
-		err := tx.Exec(Query).Error
+		err := tx.Exec(CreateFts5TableQuery).Error
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+		err = tx.Exec(Query).Error
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+		err = tx.Save(&Config{Key: "version", Value: "2.0.0"}).Error
 		if err != nil {
 			tx.Rollback()
 			log.Fatal("Migration failed: ", err)
 		}
 		tx.Commit()
+		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
+		if err != nil {
+			log.Fatal(err)
+		}
 		goto migrate
 
 	case 0:
 		log.Println("Migrating to 1.0.0")
-		Query := `
-INSERT INTO "configs" ("key", "value") VALUES ('version', '1.0.0');
-`
 		tx := db.Begin()
-		err := tx.Exec(Query).Error
+		err := tx.Create(&Config{Key: "version", Value: "1.0.0"}).Error
 		if err != nil {
 			tx.Rollback()
 			log.Fatal("Migration failed: ", err)
 		}
 		tx.Commit()
+		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
+		if err != nil {
+			log.Fatal(err)
+		}
 		goto migrate
 
 	default:
 		log.Fatal("Unsupported version: ", config.Value)
+	}
+
+	err = db.AutoMigrate(&ClipboardItem{}, &Config{})
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -214,8 +240,9 @@ func insertClipboardItem(c *gin.Context) {
 	}
 
 	tx := db.Create(&item)
+	UniqueError := "constraint failed: UNIQUE constraint failed: clipboard_items.clipboard_item_hash (2067)"
 	if tx.Error != nil {
-		if tx.Error.Error() == "constraint failed: UNIQUE constraint failed: clipboard_items.clipboard_item_hash (2067)" {
+		if tx.Error.Error() == UniqueError {
 			c.JSON(http.StatusConflict, gin.H{
 				"status":  http.StatusConflict,
 				"message": "ClipboardItem already exists",
@@ -344,8 +371,8 @@ func getClipboardItem(c *gin.Context) {
 			})
 			return
 		}
+		//tx.Debug()
 		tx.Limit(limit).Scan(&items)
-		//tx.Debug().Table("clipboard_items_fts").Where("clipboard_items_fts MATCH ?", search).Joins("NATURAL JOIN clipboard_items").Scan(&items)
 	} else {
 		tx.Model(&items).Count(&count)
 		if tx.Error != nil {
@@ -487,12 +514,19 @@ func awaitSignalAndExit() {
 	os.Exit(0)
 }
 
-func getMajorVersion(version string) (int, error) {
+func getMajorVersion(version string) (uint64, error) {
+	var _majorVersion string
 	re := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
 	if re.MatchString(version) {
-		return strconv.Atoi(re.FindStringSubmatch(version)[1])
+		_majorVersion = re.FindStringSubmatch(version)[1]
+	} else {
+		return 0, errors.New("invalid version")
 	}
-	return 0, errors.New("invalid version")
+	majorVersion, err := strconv.ParseUint(_majorVersion, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return majorVersion, nil
 }
 
 func getUnixMillisTimestamp() int64 {

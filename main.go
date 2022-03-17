@@ -29,8 +29,8 @@ type Config struct {
 }
 
 type ClipboardItem struct {
-	Index             int64  `gorm:"autoIncrement"`
-	ClipboardItemTime int64  `gorm:"primaryKey" json:"ClipboardItemTime"` // unix milliseconds timestamp
+	Index             int64  `gorm:"primaryKey"`
+	ClipboardItemTime int64  `json:"ClipboardItemTime"` // unix milliseconds timestamp
 	ClipboardItemText string `json:"ClipboardItemText"`
 	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
 	ClipboardItemData string `json:"ClipboardItemData"`
@@ -46,14 +46,19 @@ func main() {
 	}
 
 	log.Println("Welcome 🐱‍🏍")
-	connectDatabase()
+	connectDatabase("clipboard_archive.db")
 	migrateVersion()
-	go webServer(bindFlagPtr)
+	go func() {
+		err := setupRouter().Run(*bindFlagPtr)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 	awaitSignalAndExit()
 }
 
-func connectDatabase() {
-	db, err = gorm.Open(sqlite.Open("clipboard_archive.db"), &gorm.Config{})
+func connectDatabase(dns string) {
+	db, err = gorm.Open(sqlite.Open(dns), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -192,7 +197,7 @@ FROM clipboard_items;
 	}
 }
 
-func webServer(bindFlagPtr *string) {
+func setupRouter() *gin.Engine {
 	//	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	// Private network
@@ -219,11 +224,7 @@ func webServer(bindFlagPtr *string) {
 	api.GET("/ClipboardItem/:id", takeClipboardItem)
 	api.PUT("/ClipboardItem/:id", updateClipboardItem)
 	api.GET("/ClipboardItem/count", getClipboardItemCount)
-
-	err := r.Run(*bindFlagPtr)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return r
 }
 
 func insertClipboardItem(c *gin.Context) {
@@ -267,8 +268,9 @@ func insertClipboardItem(c *gin.Context) {
 func deleteClipboardItem(c *gin.Context) {
 	var item ClipboardItem
 
-	id := c.Params.ByName("id")
-	err := db.Where("clipboard_item_time = ?", id).Delete(&item).Error
+	_id := c.Params.ByName("id")
+	id, err := strconv.Atoi(_id)
+	err = db.Where("clipboard_item_time = ?", id).Delete(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{

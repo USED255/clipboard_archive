@@ -1,4 +1,4 @@
-module github.com/used255/clipboard_archive
+module github.com/used255/clipboard_archive/v2
 
 go 1.17
 

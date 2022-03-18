@@ -109,14 +109,23 @@ func migrateVersion() {
 	db.Model(&ClipboardItem{}).Count(&count)
 	if count == 0 {
 		log.Println("No data in database, initializing")
-		err = db.Create(&Config{Key: "version", Value: version}).Error
+		tx := db.Begin()
+		err := tx.Create(&ClipboardItem{}).Error
 		if err != nil {
+			tx.Rollback()
 			log.Fatal(err)
 		}
-		err := db.Exec(CreateFts5TableQuery).Error
+		err = tx.Create(&Config{Key: "version", Value: version}).Error
 		if err != nil {
+			tx.Rollback()
 			log.Fatal(err)
 		}
+		err = tx.Exec(CreateFts5TableQuery).Error
+		if err != nil {
+			tx.Rollback()
+			log.Fatal(err)
+		}
+		tx.Commit()
 	}
 
 migrate:

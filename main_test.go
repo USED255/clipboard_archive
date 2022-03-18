@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +20,7 @@ func dumpJSON(g gin.H) string {
 }
 
 func TestDumpJSON(t *testing.T) {
-	assert.Equal(t, `{}`, dumpJSON(gin.H{}))
+	assert.Equal(t, "{}", dumpJSON(gin.H{}))
 }
 
 func loadJSON(s string) gin.H {
@@ -30,7 +30,7 @@ func loadJSON(s string) gin.H {
 }
 
 func TestLoadJSON(t *testing.T) {
-	assert.Equal(t, gin.H{}, loadJSON(`{}`))
+	assert.Equal(t, gin.H{}, loadJSON("{}"))
 }
 
 func reloadJSON(g gin.H) gin.H {
@@ -70,13 +70,151 @@ func TestToSha256(t *testing.T) {
 func TestConnectDatabase(t *testing.T) {
 	connectDatabase("file::memory:?cache=shared")
 	assert.NotNil(t, db)
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database handle: %s", err)
+	}
+	sqlDB.Close()
 }
 
 func TestMigrateVersion(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
 	migrateVersion()
 	var config Config
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, version, config.Value)
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database handle: %s", err)
+	}
+	sqlDB.Close()
+}
+
+func TestMigrateVersion1(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+
+	Query := `
+	CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))
+	`
+	db.Exec(Query)
+
+	Query = `
+	INSERT INTO "main"."clipboard_items" ("id", "created_at", "updated_at", "deleted_at", "clipboard_item_time", "clipboard_item_text", "clipboard_item_hash", "clipboard_item_data") VALUES ("499", "2022-03-13 13:22:43.238644233+08:00", "2022-03-13 13:22:43.238644233+08:00", "", "1647146952858", "migrate", "2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", "/////gAAAAQAAAAaADkAeAAtAGMAbwBwAHkAcQAtAHQAYQBnAHMAAAAAFSwgMjAyMi0wMy0xMyAxMjo0OToxMgAAAC4AOQB4AC0AYwBvAHAAeQBxAC0AdQBzAGUAcgAtAGMAbwBwAHkALQB0AGkAbQBlAAAAAA0xNjQ3MTQ2OTUyODU4AAAACgA4AGgAdABtAGwAAAABLzxodG1sPgo8Ym9keT4KPCEtLVN0YXJ0RnJhZ21lbnQtLT48ZGl2IHN0eWxlPSJjb2xvcjogIzM1MzUzNTtiYWNrZ3JvdW5kLWNvbG9yOiAjZjhmOGY4O2ZvbnQtZmFtaWx5OiBDb25zb2xhcywgJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlO2ZvbnQtd2VpZ2h0OiBub3JtYWw7Zm9udC1zaXplOiAxNHB4O2xpbmUtaGVpZ2h0OiAxOXB4O3doaXRlLXNwYWNlOiBwcmU7Ij48ZGl2PjxzcGFuIHN0eWxlPSJjb2xvcjogIzg0MzFjNTsiPm1pZ3JhdGU8L3NwYW4+PC9kaXY+PC9kaXY+PCEtLUVuZEZyYWdtZW50LS0+CjwvYm9keT4KPC9odG1sPgAAAAwAOABwAGwAYQBpAG4AAAAAB21pZ3JhdGU=");
+	`
+	db.Exec(Query)
+
+	migrateVersion()
+	var config Config
+	db.First(&config, "key = ?", "version")
+	assert.Equal(t, version, config.Value)
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database handle: %s", err)
+	}
+	sqlDB.Close()
+}
+
+func TestMigrateVersion2(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+
+	Query := `
+	CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))
+	`
+	db.Exec(Query)
+
+	Query = `
+	CREATE TABLE "configs" ("key" text,"value" text,PRIMARY KEY ("key"))
+	`
+	db.Exec(Query)
+
+	Query = `
+	INSERT INTO "main"."clipboard_items" ("id", "created_at", "updated_at", "deleted_at", "clipboard_item_time", "clipboard_item_text", "clipboard_item_hash", "clipboard_item_data") VALUES ("499", "2022-03-13 13:22:43.238644233+08:00", "2022-03-13 13:22:43.238644233+08:00", "", "1647146952858", "migrate", "2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", "/////gAAAAQAAAAaADkAeAAtAGMAbwBwAHkAcQAtAHQAYQBnAHMAAAAAFSwgMjAyMi0wMy0xMyAxMjo0OToxMgAAAC4AOQB4AC0AYwBvAHAAeQBxAC0AdQBzAGUAcgAtAGMAbwBwAHkALQB0AGkAbQBlAAAAAA0xNjQ3MTQ2OTUyODU4AAAACgA4AGgAdABtAGwAAAABLzxodG1sPgo8Ym9keT4KPCEtLVN0YXJ0RnJhZ21lbnQtLT48ZGl2IHN0eWxlPSJjb2xvcjogIzM1MzUzNTtiYWNrZ3JvdW5kLWNvbG9yOiAjZjhmOGY4O2ZvbnQtZmFtaWx5OiBDb25zb2xhcywgJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlO2ZvbnQtd2VpZ2h0OiBub3JtYWw7Zm9udC1zaXplOiAxNHB4O2xpbmUtaGVpZ2h0OiAxOXB4O3doaXRlLXNwYWNlOiBwcmU7Ij48ZGl2PjxzcGFuIHN0eWxlPSJjb2xvcjogIzg0MzFjNTsiPm1pZ3JhdGU8L3NwYW4+PC9kaXY+PC9kaXY+PCEtLUVuZEZyYWdtZW50LS0+CjwvYm9keT4KPC9odG1sPgAAAAwAOABwAGwAYQBpAG4AAAAAB21pZ3JhdGU=");
+	`
+	db.Exec(Query)
+
+	Query = `
+	INSERT INTO "main"."configs" ("key", "value") VALUES ("version", "1.0.0");
+	`
+	db.Exec(Query)
+
+	migrateVersion()
+	var config Config
+	db.First(&config, "key = ?", "version")
+	assert.Equal(t, version, config.Value)
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database handle: %s", err)
+	}
+	sqlDB.Close()
+}
+
+func TestMigrateVersion3(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+
+	Query := `
+	CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))
+	`
+	db.Exec(Query)
+
+	Query = `
+	CREATE TABLE "configs" ("key" text,"value" text,PRIMARY KEY ("key"))
+	`
+	db.Exec(Query)
+
+	Query = `
+	INSERT INTO "main"."clipboard_items" ("id", "created_at", "updated_at", "deleted_at", "clipboard_item_time", "clipboard_item_text", "clipboard_item_hash", "clipboard_item_data") VALUES ("499", "2022-03-13 13:22:43.238644233+08:00", "2022-03-13 13:22:43.238644233+08:00", "", "1647146952858", "migrate", "2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", "/////gAAAAQAAAAaADkAeAAtAGMAbwBwAHkAcQAtAHQAYQBnAHMAAAAAFSwgMjAyMi0wMy0xMyAxMjo0OToxMgAAAC4AOQB4AC0AYwBvAHAAeQBxAC0AdQBzAGUAcgAtAGMAbwBwAHkALQB0AGkAbQBlAAAAAA0xNjQ3MTQ2OTUyODU4AAAACgA4AGgAdABtAGwAAAABLzxodG1sPgo8Ym9keT4KPCEtLVN0YXJ0RnJhZ21lbnQtLT48ZGl2IHN0eWxlPSJjb2xvcjogIzM1MzUzNTtiYWNrZ3JvdW5kLWNvbG9yOiAjZjhmOGY4O2ZvbnQtZmFtaWx5OiBDb25zb2xhcywgJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlO2ZvbnQtd2VpZ2h0OiBub3JtYWw7Zm9udC1zaXplOiAxNHB4O2xpbmUtaGVpZ2h0OiAxOXB4O3doaXRlLXNwYWNlOiBwcmU7Ij48ZGl2PjxzcGFuIHN0eWxlPSJjb2xvcjogIzg0MzFjNTsiPm1pZ3JhdGU8L3NwYW4+PC9kaXY+PC9kaXY+PCEtLUVuZEZyYWdtZW50LS0+CjwvYm9keT4KPC9odG1sPgAAAAwAOABwAGwAYQBpAG4AAAAAB21pZ3JhdGU=");
+	`
+
+	db.Exec(Query)
+
+	Query = `
+	INSERT INTO "main"."configs" ("key", "value") VALUES ("version", "2.0.0");
+	`
+	db.Exec(Query)
+
+	Query = `
+	CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
+		clipboard_item_time, 
+		clipboard_item_text, 
+		content = clipboard_items, 
+		content_rowid = clipboard_item_time
+	);
+
+	CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
+			VALUES (new.clipboard_item_time, new.clipboard_item_text);
+	END;
+
+	CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
+			VALUES("delete", old.clipboard_item_time, old.clipboard_item_text);
+	END;
+
+	CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
+			VALUES("delete", old.clipboard_item_time, old.clipboard_item_text);
+		INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
+			VALUES (new.clipboard_item_time, new.clipboard_item_text);
+	END;
+	`
+	db.Exec(Query)
+
+	Query = `
+	INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
+	SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
+	FROM clipboard_items;
+	`
+	db.Exec(Query)
+
+	migrateVersion()
+	var config Config
+	db.First(&config, "key = ?", "version")
+	assert.Equal(t, version, config.Value)
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database handle: %s", err)
+	}
+	sqlDB.Close()
 }
 
 func TestGetPing(t *testing.T) {
@@ -114,92 +252,6 @@ func TestGetVersion(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestInsertClipboardItem(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	ClipboardItemText := "The quick brown fox jumps over the lazy dog"
-	ClipboardItemData := toBase64(ClipboardItemText)
-	ClipboardItemHash := toSha256(ClipboardItemData)
-	item := gin.H{
-		"ClipboardItemTime": 1,
-		"ClipboardItemText": ClipboardItemText,
-		"ClipboardItemHash": ClipboardItemHash,
-		"ClipboardItemData": ClipboardItemData,
-	}
-	r := setupRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(item)))
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusCreated, w.Code)
-	item["Index"] = 1
-	expected := gin.H{
-		"status":        http.StatusCreated,
-		"message":       "ClipboardItem created successfully",
-		"ClipboardItem": item,
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
-}
-
-func TestDeleteClipboardItem(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	r := setupRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("DELETE", "/api/v1/ClipboardItem/1", nil)
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-	expected := gin.H{
-		"status":            http.StatusOK,
-		"message":           "ClipboardItem deleted successfully",
-		"ClipboardItemTime": 1,
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
-}
-
-func TestGetClipboardItems(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	r := setupRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem", nil)
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-func TestTakeClipboardItems(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	r := setupRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestUpdateClipboardItem(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	r := setupRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("PUT", "/api/v1/ClipboardItem/1", nil)
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestGetClipboardItemCount(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	r := setupRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/count", nil)
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-
 func TestGetMajorVersion(t *testing.T) {
 	v, err := getMajorVersion("1.2.3")
 	if err != nil {
@@ -228,7 +280,10 @@ func TestGetMajorVersion(t *testing.T) {
 		t.Fatalf("Expected 65535, got %d", v)
 		return
 	}
-	v, err = getMajorVersion("a")
+}
+
+func TestGetMajorVersionError(t *testing.T) {
+	v, err := getMajorVersion("a")
 	if err == nil {
 		t.Fatalf("Expected error, got %d", v)
 		return
@@ -239,6 +294,11 @@ func TestGetMajorVersion(t *testing.T) {
 		return
 	}
 	v, err = getMajorVersion("-1.0.0")
+	if err == nil {
+		t.Fatalf("Expected error, got %d", v)
+		return
+	}
+	v, err = getMajorVersion("184467440737095516150.0.0")
 	if err == nil {
 		t.Fatalf("Expected error, got %d", v)
 		return

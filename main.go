@@ -100,12 +100,14 @@ func migrateVersion() {
 		log.Fatal(err)
 	}
 
+	err = db.AutoMigrate(&ClipboardItem{}, &Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	db.Model(&ClipboardItem{}).Count(&count)
 	if count == 0 {
-		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
-		if err != nil {
-			log.Fatal(err)
-		}
+		log.Println("No data in database, initializing")
 		err = db.Create(&Config{Key: "version", Value: version}).Error
 		if err != nil {
 			log.Fatal(err)
@@ -133,14 +135,18 @@ migrate:
 
 	case 2:
 		log.Println("Migrating to 3.0.0")
-		err := db.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
+		tx := db.Begin()
+		err := tx.Migrator().DropColumn(&ClipboardItem{}, "index")
 		if err != nil {
-			log.Fatal(err)
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
 		}
-		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
+		err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
 		if err != nil {
-			log.Fatal(err)
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
 		}
+		tx.Commit()
 
 	case 1:
 		log.Println("Migrating to 2.0.0")
@@ -166,10 +172,6 @@ FROM clipboard_items;
 			log.Fatal("Migration failed: ", err)
 		}
 		tx.Commit()
-		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
-		if err != nil {
-			log.Fatal(err)
-		}
 		goto migrate
 
 	case 0:
@@ -181,20 +183,12 @@ FROM clipboard_items;
 			log.Fatal("Migration failed: ", err)
 		}
 		tx.Commit()
-		err = db.AutoMigrate(&ClipboardItem{}, &Config{})
-		if err != nil {
-			log.Fatal(err)
-		}
 		goto migrate
 
 	default:
 		log.Fatal("Unsupported version: ", config.Value)
 	}
 
-	err = db.AutoMigrate(&ClipboardItem{}, &Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func setupRouter() *gin.Engine {

@@ -46,6 +46,7 @@ func main() {
 	}
 
 	log.Println("Welcome 🐱‍🏍")
+	log.Println("version:", version)
 	connectDatabase("clipboard_archive.db")
 	migrateVersion()
 	go func() {

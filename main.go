@@ -46,7 +46,7 @@ func main() {
 	}
 
 	log.Println("Welcome 🐱‍🏍")
-	log.Println("version:", version)
+	log.Println("Clipboard Archive Version: ", version)
 	connectDatabase("clipboard_archive.db")
 	migrateVersion()
 	go func() {
@@ -129,7 +129,7 @@ migrate:
 			log.Fatal(err)
 		}
 	}
-
+	log.Println("Current version: ", config.Value)
 	switch configMajorVersion {
 	case currentMajorVersion:
 		return
@@ -143,6 +143,11 @@ migrate:
 			log.Fatal("Migration failed: ", err)
 		}
 		err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+		err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error
 		if err != nil {
 			tx.Rollback()
 			log.Fatal("Migration failed: ", err)

@@ -66,7 +66,7 @@ func connectDatabase(dns string) {
 }
 
 func migrateVersion() {
-	var count int64
+	var _count int64
 	var config Config
 	var configMajorVersion uint64
 
@@ -106,21 +106,19 @@ func migrateVersion() {
 		log.Fatal(err)
 	}
 
-	db.Model(&ClipboardItem{}).Count(&count)
+	db.Model(&ClipboardItem{}).Count(&_count)
+	count := _count
+	db.Model(&Config{}).Count(&_count)
+	count = count + _count
 	if count == 0 {
 		log.Println("No data in database, initializing")
 		tx := db.Begin()
-		err := tx.Create(&ClipboardItem{}).Error
+		err = tx.Exec(CreateFts5TableQuery).Error
 		if err != nil {
 			tx.Rollback()
 			log.Fatal(err)
 		}
 		err = tx.Create(&Config{Key: "version", Value: version}).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal(err)
-		}
-		err = tx.Exec(CreateFts5TableQuery).Error
 		if err != nil {
 			tx.Rollback()
 			log.Fatal(err)

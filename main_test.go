@@ -1,88 +1,85 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
-func dumpJson(g gin.H) string {
+func dumpJSON(g gin.H) string {
 	b, _ := json.Marshal(g)
 	return string(b)
 }
 
-func TestDumpJson(t *testing.T) {
-	assert.Equal(t, dumpJson(gin.H{
-		"status":  http.StatusOK,
-		"message": "pong",
-	}), dumpJson(gin.H{
-		"status":  http.StatusOK,
-		"message": "pong",
-	}))
-	assert.NotEqual(t, dumpJson(gin.H{
-		"status":  http.StatusOK,
-		"message": "pong",
-	}), dumpJson(gin.H{
-		"status":  http.StatusOK,
-		"message": "pong2",
-	}))
-	assert.NotEqual(t, dumpJson(gin.H{
-		"status":  http.StatusOK,
-		"message": "pong",
-	}), dumpJson(gin.H{
-		"status":  http.StatusOK,
-		"message": "pong",
-		"extra":   "extra",
-	}))
+func TestDumpJSON(t *testing.T) {
+	assert.Equal(t, `{}`, dumpJSON(gin.H{}))
 }
 
-func bindJson(s string) gin.H {
+func loadJSON(s string) gin.H {
 	var g gin.H
 	json.Unmarshal([]byte(s), &g)
 	return g
 }
 
-func TestBindJson(t *testing.T) {
-	assert.Equal(t, bindJson(dumpJson(gin.H{
-		"ClipboardItemTime": 1,
-		"ClipboardItemText": "",
-		"ClipboardItemHash": "",
-		"ClipboardItemData": "",
-	})), bindJson(`{"ClipboardItemTime":1,"ClipboardItemText":"","ClipboardItemHash":"","ClipboardItemData":""}`))
+func TestLoadJSON(t *testing.T) {
+	assert.Equal(t, gin.H{}, loadJSON(`{}`))
 }
 
-func abcJson(s string) string {
-	return dumpJson(bindJson(s))
+func reloadJSON(g gin.H) gin.H {
+	return loadJSON(dumpJSON(g))
 }
 
-func TestAbcJson(t *testing.T) {
-	assert.Equal(t, abcJson(`{"ClipboardItemTime":1,"ClipboardItemText":"","ClipboardItemHash":"","ClipboardItemData":""}`), abcJson(`{"ClipboardItemTime":1,"ClipboardItemText":"","ClipboardItemHash":"","ClipboardItemData":""}`))
+func TestReloadJSON(t *testing.T) {
+	assert.Equal(t, gin.H{}, reloadJSON(gin.H{}))
+}
+
+func toBase64(s string) string {
+	return base64.StdEncoding.EncodeToString([]byte(s))
+}
+
+func TestToBase64(t *testing.T) {
+	s := "The quick brown fox jumps over the lazy dog"
+	b := toBase64(s)
+	if b == "" {
+		t.Fatalf("Expected non-empty string, got %s", b)
+		return
+	}
+}
+
+func toSha256(s string) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(s)))
+}
+
+func TestToSha256(t *testing.T) {
+	s := "The quick brown fox jumps over the lazy dog"
+	b := toSha256(s)
+	if b == "" {
+		t.Fatalf("Expected non-empty string, got %s", b)
+		return
+	}
 }
 
 func TestConnectDatabase(t *testing.T) {
 	connectDatabase("file::memory:?cache=shared")
-	if db == nil {
-		t.Fatalf("Expected database connection, got nil")
-	}
+	assert.NotNil(t, db)
 }
 
 func TestMigrateVersion(t *testing.T) {
 	migrateVersion()
 	var config Config
 	db.First(&config, "key = ?", "version")
-	if config.Value != version {
-		t.Fatalf("Expected %s, got %s", version, config.Value)
-	}
+	assert.Equal(t, version, config.Value)
 }
 
-func TestRouterPing(t *testing.T) {
+func TestGetPing(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := setupRouter()
 	w := httptest.NewRecorder()
@@ -90,13 +87,16 @@ func TestRouterPing(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/v1/ping", nil)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, dumpJson(gin.H{
+	expected := gin.H{
 		"status":  http.StatusOK,
 		"message": "pong",
-	}), w.Body.String())
+	}
+	expected = reloadJSON(expected)
+	got := loadJSON(w.Body.String())
+	assert.Equal(t, expected, got)
 }
 
-func TestRouterVersion(t *testing.T) {
+func TestGetVersion(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := setupRouter()
 	w := httptest.NewRecorder()
@@ -104,48 +104,60 @@ func TestRouterVersion(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/v1/version", nil)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, dumpJson(gin.H{
+	expected := gin.H{
 		"status":  http.StatusOK,
 		"version": version,
 		"message": fmt.Sprintf("version %s", version),
-	}), w.Body.String())
+	}
+	expected = reloadJSON(expected)
+	got := loadJSON(w.Body.String())
+	assert.Equal(t, expected, got)
 }
 
 func TestInsertClipboardItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
+	ClipboardItemText := "The quick brown fox jumps over the lazy dog"
+	ClipboardItemData := toBase64(ClipboardItemText)
+	ClipboardItemHash := toSha256(ClipboardItemData)
 	item := gin.H{
 		"ClipboardItemTime": 1,
-		"ClipboardItemText": "",
-		"ClipboardItemHash": "",
-		"ClipboardItemData": "",
+		"ClipboardItemText": ClipboardItemText,
+		"ClipboardItemHash": ClipboardItemHash,
+		"ClipboardItemData": ClipboardItemData,
 	}
 	r := setupRouter()
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJson(item)))
+	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(item)))
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusCreated, w.Code)
 	item["Index"] = 1
-	assert.Equal(t, dumpJson(gin.H{
+	expected := gin.H{
 		"status":        http.StatusCreated,
 		"message":       "ClipboardItem created successfully",
 		"ClipboardItem": item,
-	}), abcJson(w.Body.String()))
+	}
+	expected = reloadJSON(expected)
+	got := loadJSON(w.Body.String())
+	assert.Equal(t, expected, got)
 }
 
 func TestDeleteClipboardItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := setupRouter()
 	w := httptest.NewRecorder()
+
 	req, _ := http.NewRequest("DELETE", "/api/v1/ClipboardItem/1", nil)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, dumpJson(gin.H{
+	expected := gin.H{
 		"status":            http.StatusOK,
 		"message":           "ClipboardItem deleted successfully",
 		"ClipboardItemTime": 1,
-	}), abcJson(w.Body.String()))
-
+	}
+	expected = reloadJSON(expected)
+	got := loadJSON(w.Body.String())
+	assert.Equal(t, expected, got)
 }
 
 func TestGetMajorVersion(t *testing.T) {
@@ -176,47 +188,9 @@ func TestGetMajorVersion(t *testing.T) {
 		t.Fatalf("Expected 65535, got %d", v)
 		return
 	}
-	/***
-	v, err = getMajorVersion("1.2.3-alpha")
-	if err != nil {
-		t.Fatalf("Error: %s", err)
-		return
-	}
-	if v != 1 {
-		t.Fatalf("Expected 1, got %d", v)
-		return
-	}
-	v, err = getMajorVersion("1.2.3-alpha.1")
-	if err != nil {
-		t.Fatalf("Error: %s", err)
-		return
-	}
-	if v != 1 {
-		t.Fatalf("Expected 1, got %d", v)
-		return
-	}
-	v, err = getMajorVersion("1.2.3-alpha+build")
-	if err != nil {
-		t.Fatalf("Error: %s", err)
-		return
-	}
-	v, err = getMajorVersion("1.2.3+build")
-	if err != nil {
-		t.Fatalf("Error: %s", err)
-		return
-	}
-	if v != 1 {
-		t.Fatalf("Expected 1, got %d", v)
-		return
-	}
-	***/
 	v, err = getMajorVersion("a")
 	if err == nil {
 		t.Fatalf("Expected error, got %d", v)
-		return
-	}
-	if v != 0 {
-		t.Fatalf("Expected 0, got %d", v)
 		return
 	}
 	v, err = getMajorVersion("1.1.1.1")
@@ -224,17 +198,9 @@ func TestGetMajorVersion(t *testing.T) {
 		t.Fatalf("Expected error, got %d", v)
 		return
 	}
-	if v != 0 {
-		t.Fatalf("Expected 0, got %d", v)
-		return
-	}
 	v, err = getMajorVersion("-1.0.0")
 	if err == nil {
 		t.Fatalf("Expected error, got %d", v)
-		return
-	}
-	if v != 0 {
-		t.Fatalf("Expected 0, got %d", v)
 		return
 	}
 }
@@ -243,10 +209,6 @@ func TestGetUnixMillisTimestamp(t *testing.T) {
 	ts := getUnixMillisTimestamp()
 	if ts < 0 {
 		t.Fatalf("Expected positive number, got %d", ts)
-		return
-	}
-	if ts < int64(time.Millisecond) {
-		t.Fatalf("Expected at least 1ms, got %d", ts)
 		return
 	}
 }

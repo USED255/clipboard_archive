@@ -270,6 +270,14 @@ func deleteClipboardItem(c *gin.Context) {
 
 	_id := c.Params.ByName("id")
 	id, err := strconv.Atoi(_id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Invalid ID",
+			"error":   err.Error(),
+		})
+		return
+	}
 	err = db.Where("clipboard_item_time = ?", id).Delete(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -413,8 +421,17 @@ func getClipboardItem(c *gin.Context) {
 func takeClipboardItem(c *gin.Context) {
 	var item ClipboardItem
 
-	id := c.Params.ByName("id")
-	err := db.Where("clipboard_item_time = ?", id).First(&item).Error
+	_id := c.Params.ByName("id")
+	id, err := strconv.Atoi(_id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Invalid ID",
+			"error":   err.Error(),
+		})
+		return
+	}
+	err = db.Where("clipboard_item_time = ?", id).First(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{

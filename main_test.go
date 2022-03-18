@@ -160,6 +160,46 @@ func TestDeleteClipboardItem(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
+func TestGetClipboardItems(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := setupRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestTakeClipboardItems(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := setupRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestUpdateClipboardItem(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := setupRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/api/v1/ClipboardItem/1", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetClipboardItemCount(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := setupRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/count", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestGetMajorVersion(t *testing.T) {
 	v, err := getMajorVersion("1.2.3")
 	if err != nil {

@@ -124,6 +124,15 @@ func createVersion0Database() {
 	db.Exec(Query)
 }
 
+func TestCreateVersion0Database(t *testing.T) {
+	var config Config
+	connectDatabase("file::memory:?cache=shared")
+	createVersion0Database()
+	db.First(&config, "key = ?", "version")
+	assert.Equal(t, "", config.Value)
+	closeDatabase()
+}
+
 func TestMigrateVersion0To1(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
@@ -155,6 +164,15 @@ func createVersion1Database() {
 	INSERT INTO "main"."configs" ("key", "value") VALUES ("version", "1.0.0");
 	`
 	db.Exec(Query)
+}
+
+func TestCreateVersion1Database(t *testing.T) {
+	var config Config
+	connectDatabase("file::memory:?cache=shared")
+	createVersion1Database()
+	db.First(&config, "key = ?", "version")
+	assert.Equal(t, "1.0.0", config.Value)
+	closeDatabase()
 }
 
 func TestMigrateVersion1To2(t *testing.T) {
@@ -225,6 +243,15 @@ FROM clipboard_items;
 	db.Exec(Query)
 }
 
+func TestCreateVersion2Database(t *testing.T) {
+	var config Config
+	connectDatabase("file::memory:?cache=shared")
+	createVersion2Database()
+	db.First(&config, "key = ?", "version")
+	assert.Equal(t, "2.0.0", config.Value)
+	closeDatabase()
+}
+
 func TestMigrateVersion2To3(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
@@ -287,18 +314,26 @@ func preparationClipboardItem() ClipboardItem {
 	return item
 }
 
-func ClipboardItemToGinH(s ClipboardItem) gin.H {
+func TestPreparationClipboardItem(t *testing.T) {
+	preparationClipboardItem()
+}
+
+func clipboardItemToGinH(s ClipboardItem) gin.H {
 	var c gin.H
 	b, _ := json.Marshal(&s)
 	_ = json.Unmarshal(b, &c)
 	return c
 }
 
+func TestClipboardItemToGinH(t *testing.T) {
+	clipboardItemToGinH(preparationClipboardItem())
+}
+
 func TestInsertClipboardItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	connectDatabase("file::memory:?cache=shared")
 	migrateVersion()
-	item := ClipboardItemToGinH(preparationClipboardItem())
+	item := clipboardItemToGinH(preparationClipboardItem())
 	r := setupRouter()
 	w := httptest.NewRecorder()
 
@@ -343,7 +378,7 @@ func TestInsertClipboardItemUniqueError(t *testing.T) {
 	connectDatabase("file::memory:?cache=shared")
 	migrateVersion()
 	_item := preparationClipboardItem()
-	item := ClipboardItemToGinH(_item)
+	item := clipboardItemToGinH(_item)
 	db.Create(&_item)
 	r := setupRouter()
 	w := httptest.NewRecorder()
@@ -363,7 +398,7 @@ func TestInsertClipboardItemUniqueError(t *testing.T) {
 func TestInsertClipboardItemDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	connectDatabase("file::memory:?cache=shared")
-	item := ClipboardItemToGinH(preparationClipboardItem())
+	item := clipboardItemToGinH(preparationClipboardItem())
 	r := setupRouter()
 	w := httptest.NewRecorder()
 

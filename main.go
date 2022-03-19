@@ -19,6 +19,31 @@ import (
 )
 
 const version = "3.0.0"
+const CreateFts5TableQuery = `
+CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
+	clipboard_item_time, 
+	clipboard_item_text, 
+	content = clipboard_items, 
+	content_rowid = clipboard_item_time
+);
+
+CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
+	INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
+		VALUES (new.clipboard_item_time, new.clipboard_item_text);
+END;
+
+CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
+	INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
+		VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+END;
+
+CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
+	INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
+		VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
+	INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
+		VALUES (new.clipboard_item_time, new.clipboard_item_text);
+END;
+`
 
 var db *gorm.DB
 var err error
@@ -30,7 +55,7 @@ type Config struct {
 
 type ClipboardItem struct {
 	Index             int64  `gorm:"primaryKey"`
-	ClipboardItemTime int64  `json:"ClipboardItemTime"` // unix milliseconds timestamp
+	ClipboardItemTime int64  `json:"ClipboardItemTime" binding:"required"` // unix milliseconds timestamp
 	ClipboardItemText string `json:"ClipboardItemText"`
 	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
 	ClipboardItemData string `json:"ClipboardItemData"`
@@ -59,6 +84,9 @@ func main() {
 }
 
 func connectDatabase(dns string) {
+	if db != nil {
+		log.Fatalf("Database already connected")
+	}
 	db, err = gorm.Open(sqlite.Open(dns), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
@@ -69,32 +97,6 @@ func migrateVersion() {
 	var _count int64
 	var config Config
 	var configMajorVersion uint64
-
-	CreateFts5TableQuery := `
-	CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
-		clipboard_item_time, 
-		clipboard_item_text, 
-		content = clipboard_items, 
-		content_rowid = clipboard_item_time
-	);
-	
-	CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
-		INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
-			VALUES (new.clipboard_item_time, new.clipboard_item_text);
-	END;
-	
-	CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
-		INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
-			VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-	END;
-	
-	CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
-		INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
-			VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-		INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
-			VALUES (new.clipboard_item_time, new.clipboard_item_text);
-	END;
-`
 
 	currentMajorVersion, err := getMajorVersion(version)
 	if err != nil {
@@ -111,19 +113,7 @@ func migrateVersion() {
 	db.Model(&Config{}).Count(&_count)
 	count = count + _count
 	if count == 0 {
-		log.Println("No data in database, initializing")
-		tx := db.Begin()
-		err = tx.Exec(CreateFts5TableQuery).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal(err)
-		}
-		err = tx.Create(&Config{Key: "version", Value: version}).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal(err)
-		}
-		tx.Commit()
+		initializingDatabase()
 	}
 
 migrate:
@@ -137,71 +127,97 @@ migrate:
 		}
 	}
 	log.Println("Current version: ", config.Value)
+
 	switch configMajorVersion {
 	case currentMajorVersion:
 		return
-
 	case 2:
-		log.Println("Migrating to 3.0.0")
-		tx := db.Begin()
-		err := tx.Migrator().DropColumn(&ClipboardItem{}, "index")
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		tx.Commit()
-
+		migrateVersion2To3()
+		goto migrate
 	case 1:
-		log.Println("Migrating to 2.0.0")
-		Query := `
-INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
-SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
-FROM clipboard_items;
-`
-		tx := db.Begin()
-		err := tx.Exec(CreateFts5TableQuery).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		err = tx.Exec(Query).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		err = tx.Save(&Config{Key: "version", Value: "2.0.0"}).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		tx.Commit()
+		migrateVersion1To2()
 		goto migrate
-
 	case 0:
-		log.Println("Migrating to 1.0.0")
-		tx := db.Begin()
-		err := tx.Create(&Config{Key: "version", Value: "1.0.0"}).Error
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-		tx.Commit()
+		migrateVersion0To1()
 		goto migrate
-
 	default:
 		log.Fatal("Unsupported version: ", config.Value)
 	}
 
+}
+
+func initializingDatabase() {
+	log.Println("No data in database, initializing")
+	tx := db.Begin()
+	err = tx.Exec(CreateFts5TableQuery).Error
+	if err != nil {
+		tx.Rollback()
+		log.Fatal(err)
+	}
+	err = tx.Create(&Config{Key: "version", Value: version}).Error
+	if err != nil {
+		tx.Rollback()
+		log.Fatal(err)
+	}
+	tx.Commit()
+}
+
+func migrateVersion2To3() {
+	log.Println("Migrating to 3.0.0")
+	tx := db.Begin()
+	err := tx.Migrator().DropColumn(&ClipboardItem{}, "index")
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("Migration failed: ", err)
+	}
+	err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("Migration failed: ", err)
+	}
+	err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("Migration failed: ", err)
+	}
+	tx.Commit()
+}
+
+func migrateVersion1To2() {
+	log.Println("Migrating to 2.0.0")
+	Query := `
+INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
+SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
+FROM clipboard_items;
+`
+	tx := db.Begin()
+	err := tx.Exec(CreateFts5TableQuery).Error
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("Migration failed: ", err)
+	}
+	err = tx.Exec(Query).Error
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("Migration failed: ", err)
+	}
+	err = tx.Save(&Config{Key: "version", Value: "2.0.0"}).Error
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("Migration failed: ", err)
+	}
+	tx.Commit()
+}
+
+func migrateVersion0To1() {
+	log.Println("Migrating to 1.0.0")
+	tx := db.Begin()
+	err := tx.Create(&Config{Key: "version", Value: "1.0.0"}).Error
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("Migration failed: ", err)
+	}
+	tx.Commit()
 }
 
 func setupRouter() *gin.Engine {
@@ -285,7 +301,23 @@ func deleteClipboardItem(c *gin.Context) {
 		})
 		return
 	}
-	err = db.Where("clipboard_item_time = ?", id).Delete(&item).Error
+	err = db.Where("clipboard_item_time = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status":  http.StatusNotFound,
+				"message": "ClipboardItem not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Error deleting ClipboardItem",
+			"error":   err.Error(),
+		})
+		return
+	}
+	err = db.Delete(&item, item.Index).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -357,7 +389,7 @@ func getClipboardItem(c *gin.Context) {
 			})
 			return
 		}
-		tx.Where("clipboard_item_time <= ?", startTimestamp)
+		tx.Where("clipboard_item_time >= ?", startTimestamp)
 	}
 
 	if _endTimestamp != "" {
@@ -370,7 +402,7 @@ func getClipboardItem(c *gin.Context) {
 			})
 			return
 		}
-		tx.Where("clipboard_item_time >= ?", endTimestamp)
+		tx.Where("clipboard_item_time <= ?", endTimestamp)
 	}
 
 	if search != "" {

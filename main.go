@@ -502,7 +502,7 @@ func updateClipboardItem(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
-			"message": "Invalid id",
+			"message": "Invalid ID",
 			"error":   err.Error(),
 		})
 		return
@@ -525,24 +525,32 @@ func updateClipboardItem(c *gin.Context) {
 		return
 	}
 
-	if c.BindJSON(&item) == nil {
-		item.ClipboardItemTime = id
-		err = db.Save(&item).Error
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":  http.StatusInternalServerError,
-				"message": "Error updating ClipboardItem",
-				"error":   err.Error(),
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":        http.StatusOK,
-			"message":       "ClipboardItem updated successfully",
-			"ClipboardItem": item,
+	err = c.BindJSON(&item)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Invalid JSON",
+			"error":   err.Error(),
 		})
+		return
 	}
+	item.ClipboardItemTime = id
+	err = db.Save(&item).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Error updating ClipboardItem",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":        http.StatusOK,
+		"message":       "ClipboardItem updated successfully",
+		"ClipboardItem": item,
+	})
+
 }
 
 func getClipboardItemCount(c *gin.Context) {

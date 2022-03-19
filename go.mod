@@ -6,7 +6,6 @@ require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/glebarez/sqlite v1.3.5
 	github.com/stretchr/testify v1.7.0
-	github.com/tjarratt/babble v0.0.0-20210505082055-cbca2a4833c1
 	gorm.io/gorm v1.23.2
 )
 
@@ -26,8 +25,6 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.18.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect

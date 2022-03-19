@@ -292,7 +292,7 @@ func deleteClipboardItem(c *gin.Context) {
 	var item ClipboardItem
 
 	_id := c.Params.ByName("id")
-	id, err := strconv.Atoi(_id)
+	id, err := strconv.ParseInt(_id, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
@@ -461,7 +461,7 @@ func takeClipboardItem(c *gin.Context) {
 	var item ClipboardItem
 
 	_id := c.Params.ByName("id")
-	id, err := strconv.Atoi(_id)
+	id, err := strconv.ParseInt(_id, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,

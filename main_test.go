@@ -846,6 +846,26 @@ func TestTakeClipboardItemsNotFoundError(t *testing.T) {
 	closeDatabase()
 }
 
+func TestTakeClipboardItemsDatabaseError(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	connectDatabase("file::memory:?cache=shared")
+	r := setupRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	expected := gin.H{
+		"status":  http.StatusInternalServerError,
+		"message": "Error taking ClipboardItem",
+	}
+	expected = reloadJSON(expected)
+	got := loadJSON(w.Body.String())
+	delete(got, "error")
+	assert.Equal(t, expected, got)
+	closeDatabase()
+}
+
 func TestUpdateClipboardItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	connectDatabase("file::memory:?cache=shared")
@@ -932,6 +952,28 @@ func TestUpdateClipboardItemNotFoundError(t *testing.T) {
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
+	assert.Equal(t, expected, got)
+	closeDatabase()
+}
+
+func TestUpdateClipboardItemDatabaseError(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	connectDatabase("file::memory:?cache=shared")
+	item := preparationClipboardItem()
+	db.Create(&item)
+	r := setupRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/api/v1/ClipboardItem/1", strings.NewReader(`{"clipboardItemText": "test"}`))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	expected := gin.H{
+		"status":  http.StatusInternalServerError,
+		"message": "Error updating ClipboardItem",
+	}
+	expected = reloadJSON(expected)
+	got := loadJSON(w.Body.String())
+	delete(got, "error")
 	assert.Equal(t, expected, got)
 	closeDatabase()
 }

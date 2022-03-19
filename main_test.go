@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/tjarratt/babble"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -298,10 +297,26 @@ func TestGetVersion(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
+func randString(l int) string {
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, l)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+func TestRandString(t *testing.T) {
+	assert.Len(t, randString(5), 5)
+	a := randString(5)
+	b := randString(5)
+	log.Println("a:", a)
+	log.Println("b:", b)
+	assert.NotEqual(t, a, b)
+}
+
 func preparationClipboardItem() ClipboardItem {
-	babbler := babble.NewBabbler()
-	babbler.Separator = " "
-	ClipboardItemText := babbler.Babble()
+	ClipboardItemText := randString(5)
 	ClipboardItemTime := getUnixMillisTimestamp()
 	ClipboardItemData := toBase64(ClipboardItemText)
 	ClipboardItemHash := toSha256(ClipboardItemData)

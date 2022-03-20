@@ -113,19 +113,7 @@ func TestMigrateVersionInitializingDatabase(t *testing.T) {
 }
 
 func createVersion0Database() {
-	db.Exec(`
-		CREATE TABLE "clipboard_items" (
-			"id" integer,
-			"created_at" datetime,
-			"updated_at" datetime,
-			"deleted_at" datetime,
-			"clipboard_item_time" integer UNIQUE,
-			"clipboard_item_text" text,
-			"clipboard_item_hash" text UNIQUE,
-			"clipboard_item_data" text,
-			PRIMARY KEY ("id")
-		);
-	`)
+	db.Exec(`CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))`)
 
 	db.Exec(`
 		INSERT INTO "main"."clipboard_items" (
@@ -177,19 +165,7 @@ func TestMigrateVersion0To1(t *testing.T) {
 }
 
 func createVersion1Database() {
-	db.Exec(`
-		CREATE TABLE "clipboard_items" (
-			"id" integer,
-			"created_at" datetime,
-			"updated_at" datetime,
-			"deleted_at" datetime,
-			"clipboard_item_time" integer UNIQUE,
-			"clipboard_item_text" text,
-			"clipboard_item_hash" text UNIQUE,
-			"clipboard_item_data" text,
-			PRIMARY KEY ("id")
-		);
-	`)
+	db.Exec(`CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))`)
 
 	db.Exec(`
 		INSERT INTO "main"."clipboard_items" (
@@ -257,19 +233,7 @@ func TestMigrateVersion1To2(t *testing.T) {
 }
 
 func createVersion2Database() {
-	db.Exec(`
-		CREATE TABLE "clipboard_items" (
-			"id" integer,
-			"created_at" datetime,
-			"updated_at" datetime,
-			"deleted_at" datetime,
-			"clipboard_item_time" integer UNIQUE,
-			"clipboard_item_text" text,
-			"clipboard_item_hash" text UNIQUE,
-			"clipboard_item_data" text,
-			PRIMARY KEY ("id")
-		);
-	`)
+	db.Exec(`CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))`)
 
 	db.Exec(`
 		INSERT INTO "main"."clipboard_items" (

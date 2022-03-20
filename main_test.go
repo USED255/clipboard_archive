@@ -113,15 +113,42 @@ func TestMigrateVersionInitializingDatabase(t *testing.T) {
 }
 
 func createVersion0Database() {
-	Query := `
-	CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))
-	`
-	db.Exec(Query)
+	db.Exec(`
+		CREATE TABLE "clipboard_items" (
+			"id" integer,
+			"created_at" datetime,
+			"updated_at" datetime,
+			"deleted_at" datetime,
+			"clipboard_item_time" integer UNIQUE,
+			"clipboard_item_text" text,
+			"clipboard_item_hash" text UNIQUE,
+			"clipboard_item_data" text,
+			PRIMARY KEY ("id")
+		);
+	`)
 
-	Query = `
-	INSERT INTO "main"."clipboard_items" ("id", "created_at", "updated_at", "deleted_at", "clipboard_item_time", "clipboard_item_text", "clipboard_item_hash", "clipboard_item_data") VALUES ("499", "2022-03-13 13:22:43.238644233+08:00", "2022-03-13 13:22:43.238644233+08:00", "", "1647146952858", "migrate", "2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", "/////gAAAAQAAAAaADkAeAAtAGMAbwBwAHkAcQAtAHQAYQBnAHMAAAAAFSwgMjAyMi0wMy0xMyAxMjo0OToxMgAAAC4AOQB4AC0AYwBvAHAAeQBxAC0AdQBzAGUAcgAtAGMAbwBwAHkALQB0AGkAbQBlAAAAAA0xNjQ3MTQ2OTUyODU4AAAACgA4AGgAdABtAGwAAAABLzxodG1sPgo8Ym9keT4KPCEtLVN0YXJ0RnJhZ21lbnQtLT48ZGl2IHN0eWxlPSJjb2xvcjogIzM1MzUzNTtiYWNrZ3JvdW5kLWNvbG9yOiAjZjhmOGY4O2ZvbnQtZmFtaWx5OiBDb25zb2xhcywgJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlO2ZvbnQtd2VpZ2h0OiBub3JtYWw7Zm9udC1zaXplOiAxNHB4O2xpbmUtaGVpZ2h0OiAxOXB4O3doaXRlLXNwYWNlOiBwcmU7Ij48ZGl2PjxzcGFuIHN0eWxlPSJjb2xvcjogIzg0MzFjNTsiPm1pZ3JhdGU8L3NwYW4+PC9kaXY+PC9kaXY+PCEtLUVuZEZyYWdtZW50LS0+CjwvYm9keT4KPC9odG1sPgAAAAwAOABwAGwAYQBpAG4AAAAAB21pZ3JhdGU=");
-	`
-	db.Exec(Query)
+	db.Exec(`
+		INSERT INTO "main"."clipboard_items" (
+			"id", 
+			"created_at", 
+			"updated_at", 
+			"deleted_at", 
+			"clipboard_item_time", 
+			"clipboard_item_text", 
+			"clipboard_item_hash", 
+			"clipboard_item_data"
+		) 
+		VALUES (
+			"499", 
+			"2022-03-13 13:22:43.238644233+08:00", 
+			"2022-03-13 13:22:43.238644233+08:00", 
+			"", 
+			"1647146952858", 
+			"migrate", 
+			"2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", 
+			"/////gAAAAAAA="
+			);
+	`)
 }
 
 func TestCreateVersion0Database(t *testing.T) {
@@ -150,25 +177,58 @@ func TestMigrateVersion0To1(t *testing.T) {
 }
 
 func createVersion1Database() {
-	Query := `
-	CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))
-	`
-	db.Exec(Query)
+	db.Exec(`
+		CREATE TABLE "clipboard_items" (
+			"id" integer,
+			"created_at" datetime,
+			"updated_at" datetime,
+			"deleted_at" datetime,
+			"clipboard_item_time" integer UNIQUE,
+			"clipboard_item_text" text,
+			"clipboard_item_hash" text UNIQUE,
+			"clipboard_item_data" text,
+			PRIMARY KEY ("id")
+		);
+	`)
 
-	Query = `
-	CREATE TABLE "configs" ("key" text,"value" text,PRIMARY KEY ("key"))
-	`
-	db.Exec(Query)
+	db.Exec(`
+		INSERT INTO "main"."clipboard_items" (
+			"id", 
+			"created_at", 
+			"updated_at", 
+			"deleted_at", 
+			"clipboard_item_time", 
+			"clipboard_item_text", 
+			"clipboard_item_hash", 
+			"clipboard_item_data") VALUES ("499", 
+			"2022-03-13 13:22:43.238644233+08:00", 
+			"2022-03-13 13:22:43.238644233+08:00", 
+			"", 
+			"1647146952858", 
+			"migrate", 
+			"2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", 
+			"/////gAAAAAAA="
+		);
+	`)
 
-	Query = `
-	INSERT INTO "main"."clipboard_items" ("id", "created_at", "updated_at", "deleted_at", "clipboard_item_time", "clipboard_item_text", "clipboard_item_hash", "clipboard_item_data") VALUES ("499", "2022-03-13 13:22:43.238644233+08:00", "2022-03-13 13:22:43.238644233+08:00", "", "1647146952858", "migrate", "2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", "/////gAAAAQAAAAaADkAeAAtAGMAbwBwAHkAcQAtAHQAYQBnAHMAAAAAFSwgMjAyMi0wMy0xMyAxMjo0OToxMgAAAC4AOQB4AC0AYwBvAHAAeQBxAC0AdQBzAGUAcgAtAGMAbwBwAHkALQB0AGkAbQBlAAAAAA0xNjQ3MTQ2OTUyODU4AAAACgA4AGgAdABtAGwAAAABLzxodG1sPgo8Ym9keT4KPCEtLVN0YXJ0RnJhZ21lbnQtLT48ZGl2IHN0eWxlPSJjb2xvcjogIzM1MzUzNTtiYWNrZ3JvdW5kLWNvbG9yOiAjZjhmOGY4O2ZvbnQtZmFtaWx5OiBDb25zb2xhcywgJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlO2ZvbnQtd2VpZ2h0OiBub3JtYWw7Zm9udC1zaXplOiAxNHB4O2xpbmUtaGVpZ2h0OiAxOXB4O3doaXRlLXNwYWNlOiBwcmU7Ij48ZGl2PjxzcGFuIHN0eWxlPSJjb2xvcjogIzg0MzFjNTsiPm1pZ3JhdGU8L3NwYW4+PC9kaXY+PC9kaXY+PCEtLUVuZEZyYWdtZW50LS0+CjwvYm9keT4KPC9odG1sPgAAAAwAOABwAGwAYQBpAG4AAAAAB21pZ3JhdGU=");
-	`
-	db.Exec(Query)
+	db.Exec(`
+		CREATE TABLE "configs" (
+			"key" text,
+			"value" text,
+			PRIMARY KEY ("key")
+		);
+	`)
 
-	Query = `
-	INSERT INTO "main"."configs" ("key", "value") VALUES ("version", "1.0.0");
-	`
-	db.Exec(Query)
+	db.Exec(`
+		INSERT INTO "main"."configs" (
+			"key", 
+			"value"
+		)
+		 VALUES (
+			"version", 
+			"1.0.0"
+		);
+	`)
 }
 
 func TestCreateVersion1Database(t *testing.T) {
@@ -197,60 +257,121 @@ func TestMigrateVersion1To2(t *testing.T) {
 }
 
 func createVersion2Database() {
-	Query := `
-CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))
-`
-	db.Exec(Query)
+	db.Exec(`
+		CREATE TABLE "clipboard_items" (
+			"id" integer,
+			"created_at" datetime,
+			"updated_at" datetime,
+			"deleted_at" datetime,
+			"clipboard_item_time" integer UNIQUE,
+			"clipboard_item_text" text,
+			"clipboard_item_hash" text UNIQUE,
+			"clipboard_item_data" text,
+			PRIMARY KEY ("id")
+		);
+	`)
 
-	Query = `
-CREATE TABLE "configs" ("key" text,"value" text,PRIMARY KEY ("key"))
-`
-	db.Exec(Query)
+	db.Exec(`
+		INSERT INTO "main"."clipboard_items" (
+			"id", 
+			"created_at", 
+			"updated_at", 
+			"deleted_at", 
+			"clipboard_item_time", 
+			"clipboard_item_text", 
+			"clipboard_item_hash", 
+			"clipboard_item_data") VALUES ("499", 
+			"2022-03-13 13:22:43.238644233+08:00", 
+			"2022-03-13 13:22:43.238644233+08:00", 
+			"", 
+			"1647146952858", 
+			"migrate", 
+			"2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", 
+			"/////gAAAAAAA="
+		);
+	`)
 
-	Query = `
-INSERT INTO "main"."clipboard_items" ("id", "created_at", "updated_at", "deleted_at", "clipboard_item_time", "clipboard_item_text", "clipboard_item_hash", "clipboard_item_data") VALUES ("499", "2022-03-13 13:22:43.238644233+08:00", "2022-03-13 13:22:43.238644233+08:00", "", "1647146952858", "migrate", "2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", "/////gAAAAQAAAAaADkAeAAtAGMAbwBwAHkAcQAtAHQAYQBnAHMAAAAAFSwgMjAyMi0wMy0xMyAxMjo0OToxMgAAAC4AOQB4AC0AYwBvAHAAeQBxAC0AdQBzAGUAcgAtAGMAbwBwAHkALQB0AGkAbQBlAAAAAA0xNjQ3MTQ2OTUyODU4AAAACgA4AGgAdABtAGwAAAABLzxodG1sPgo8Ym9keT4KPCEtLVN0YXJ0RnJhZ21lbnQtLT48ZGl2IHN0eWxlPSJjb2xvcjogIzM1MzUzNTtiYWNrZ3JvdW5kLWNvbG9yOiAjZjhmOGY4O2ZvbnQtZmFtaWx5OiBDb25zb2xhcywgJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlO2ZvbnQtd2VpZ2h0OiBub3JtYWw7Zm9udC1zaXplOiAxNHB4O2xpbmUtaGVpZ2h0OiAxOXB4O3doaXRlLXNwYWNlOiBwcmU7Ij48ZGl2PjxzcGFuIHN0eWxlPSJjb2xvcjogIzg0MzFjNTsiPm1pZ3JhdGU8L3NwYW4+PC9kaXY+PC9kaXY+PCEtLUVuZEZyYWdtZW50LS0+CjwvYm9keT4KPC9odG1sPgAAAAwAOABwAGwAYQBpAG4AAAAAB21pZ3JhdGU=");
-`
+	db.Exec(`
+		CREATE TABLE "configs" (
+			"key" text,
+			"value" text,
+			PRIMARY KEY ("key")
+		);
+	`)
 
-	db.Exec(Query)
+	db.Exec(`
+		INSERT INTO "main"."configs" (
+			"key", 
+			"value"
+		)
+		VALUES (
+			"version", 
+			"2.0.0"
+		);
+	`)
 
-	Query = `
-INSERT INTO "main"."configs" ("key", "value") VALUES ("version", "2.0.0");
-`
-	db.Exec(Query)
+	db.Exec(`
+		CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
+			clipboard_item_time, 
+			clipboard_item_text, 
+			content = clipboard_items, 
+			content_rowid = clipboard_item_time
+		);
+		
+		CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
+			INSERT INTO clipboard_items_fts(
+				rowid, 
+				clipboard_item_text
+			) 
+			VALUES (
+				new.clipboard_item_time, 
+				new.clipboard_item_text
+			);
+		END;
+		
+		CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
+			INSERT INTO clipboard_items_fts(
+				clipboard_items_fts, 
+				rowid, 
+				clipboard_item_text
+			) 
+			VALUES(
+				"delete", 
+				old.clipboard_item_time, 
+				old.clipboard_item_text
+			);
+		END;
+		
+		CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
+			INSERT INTO clipboard_items_fts(
+				clipboard_items_fts, 
+				rowid, 
+				clipboard_item_text
+			) 
+			VALUES(
+				"delete", 
+				old.clipboard_item_time, 
+				old.clipboard_item_text
+			);
+			INSERT INTO clipboard_items_fts(
+				rowid, 
+				clipboard_item_text
+			) 
+			VALUES (n
+				ew.clipboard_item_time, 
+				new.clipboard_item_text
+			);
+		END;
+	`)
 
-	Query = `
-CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
-	clipboard_item_time, 
-	clipboard_item_text, 
-	content = clipboard_items, 
-	content_rowid = clipboard_item_time
-);
-
-CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
-	INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
-		VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
-	INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
-		VALUES("delete", old.clipboard_item_time, old.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
-	INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
-		VALUES("delete", old.clipboard_item_time, old.clipboard_item_text);
-	INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
-		VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-`
-	db.Exec(Query)
-
-	Query = `
-INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
-SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
-FROM clipboard_items;
-`
-	db.Exec(Query)
+	db.Exec(`
+		INSERT INTO clipboard_items_fts (
+			rowid, 
+			clipboard_item_text
+		)
+		SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
+		FROM clipboard_items;
+	`)
 }
 
 func TestCreateVersion2Database(t *testing.T) {

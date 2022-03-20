@@ -92,10 +92,17 @@ type ClipboardItem struct {
 func main() {
 	bindFlagPtr := flag.String("bind", ":8080", "bind address")
 	versionFlagPtr := flag.Bool("v", false, "show version")
+	disableGinModeFlagPtr := flag.Bool("disable-gin-debug-mode", false, "gin.ReleaseMode")
+
 	flag.Parse()
+
 	if *versionFlagPtr {
 		fmt.Println(version)
 		os.Exit(0)
+	}
+
+	if *disableGinModeFlagPtr {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	log.Println("Welcome 🐱‍🏍")

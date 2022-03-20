@@ -20,29 +20,57 @@ import (
 
 const version = "3.0.0"
 const CreateFts5TableQuery = `
-CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
-	clipboard_item_time, 
-	clipboard_item_text, 
-	content = clipboard_items, 
-	content_rowid = clipboard_item_time
-);
-
-CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
-	INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
-		VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
-	INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
-		VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-END;
-
-CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
-	INSERT INTO clipboard_items_fts(clipboard_items_fts, rowid, clipboard_item_text) 
-		VALUES('delete', old.clipboard_item_time, old.clipboard_item_text);
-	INSERT INTO clipboard_items_fts(rowid, clipboard_item_text) 
-		VALUES (new.clipboard_item_time, new.clipboard_item_text);
-END;
+	CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
+		clipboard_item_time, 
+		clipboard_item_text, 
+		content = clipboard_items, 
+		content_rowid = clipboard_item_time
+	);
+	
+	CREATE TRIGGER clipboard_items_ai AFTER INSERT ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(
+			rowid, 
+			clipboard_item_text
+		) 
+		VALUES (
+			new.clipboard_item_time, 
+			new.clipboard_item_text
+		);
+	END;
+		
+	CREATE TRIGGER clipboard_items_ad AFTER DELETE ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(
+			clipboard_items_fts, 
+			rowid, 
+			clipboard_item_text
+		) 
+		VALUES(
+			"delete", 
+			old.clipboard_item_time, 
+			old.clipboard_item_text
+		);
+	END;
+		
+	CREATE TRIGGER clipboard_items_au AFTER UPDATE ON clipboard_items BEGIN
+		INSERT INTO clipboard_items_fts(
+			clipboard_items_fts, 
+			rowid, 
+			clipboard_item_text
+		) 
+		VALUES(
+			"delete", 
+			old.clipboard_item_time, 
+			old.clipboard_item_text
+		);
+		INSERT INTO clipboard_items_fts(
+			rowid, 
+			clipboard_item_text
+		) 
+		VALUES (
+			new.clipboard_item_time, 
+			new.clipboard_item_text
+		);
+	END;
 `
 
 var db *gorm.DB
@@ -148,6 +176,7 @@ migrate:
 
 func initializingDatabase() {
 	log.Println("No data in database, initializing")
+
 	tx := db.Begin()
 	err = tx.Exec(CreateFts5TableQuery).Error
 	if err != nil {
@@ -164,6 +193,7 @@ func initializingDatabase() {
 
 func migrateVersion2To3() {
 	log.Println("Migrating to 3.0.0")
+
 	tx := db.Begin()
 	err := tx.Migrator().DropColumn(&ClipboardItem{}, "index")
 	if err != nil {
@@ -185,11 +215,15 @@ func migrateVersion2To3() {
 
 func migrateVersion1To2() {
 	log.Println("Migrating to 2.0.0")
+
 	Query := `
-INSERT INTO clipboard_items_fts (rowid, clipboard_item_text)
-SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
-FROM clipboard_items;
-`
+	INSERT INTO clipboard_items_fts (
+		rowid, 
+		clipboard_item_text
+	)
+	SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
+	FROM clipboard_items;
+	`
 	tx := db.Begin()
 	err := tx.Exec(CreateFts5TableQuery).Error
 	if err != nil {
@@ -211,6 +245,7 @@ FROM clipboard_items;
 
 func migrateVersion0To1() {
 	log.Println("Migrating to 1.0.0")
+
 	tx := db.Begin()
 	err := tx.Create(&Config{Key: "version", Value: "1.0.0"}).Error
 	if err != nil {
@@ -221,11 +256,8 @@ func migrateVersion0To1() {
 }
 
 func setupRouter() *gin.Engine {
-	//	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	// Private network
-	// IPv4 CIDR
-	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"})
+	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"}) // Private network
 
 	api := r.Group("/api/v1")
 	api.GET("/ping", func(c *gin.Context) {
@@ -247,6 +279,7 @@ func setupRouter() *gin.Engine {
 	api.GET("/ClipboardItem/:id", takeClipboardItem)
 	api.PUT("/ClipboardItem/:id", updateClipboardItem)
 	api.GET("/ClipboardItem/count", getClipboardItemCount)
+
 	return r
 }
 
@@ -301,6 +334,7 @@ func deleteClipboardItem(c *gin.Context) {
 		})
 		return
 	}
+
 	err = db.Where("clipboard_item_time = ?", id).First(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -317,6 +351,7 @@ func deleteClipboardItem(c *gin.Context) {
 		})
 		return
 	}
+
 	err = db.Delete(&item, item.Index).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -407,6 +442,7 @@ func getClipboardItem(c *gin.Context) {
 
 	if search != "" {
 		//log.Println("Searching for: " + search)
+		//tx.Debug()
 		tx.
 			Table("clipboard_items_fts").
 			Where("clipboard_items_fts MATCH ?", search).
@@ -420,7 +456,6 @@ func getClipboardItem(c *gin.Context) {
 			})
 			return
 		}
-		//tx.Debug()
 		tx.Limit(limit).Scan(&items)
 	} else {
 		tx.Model(&items).Count(&count)
@@ -470,6 +505,7 @@ func takeClipboardItem(c *gin.Context) {
 		})
 		return
 	}
+
 	err = db.Where("clipboard_item_time = ?", id).First(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -534,6 +570,7 @@ func updateClipboardItem(c *gin.Context) {
 		})
 		return
 	}
+
 	item.ClipboardItemTime = id
 	err = db.Save(&item).Error
 	if err != nil {
@@ -582,16 +619,19 @@ func awaitSignalAndExit() {
 
 func getMajorVersion(version string) (uint64, error) {
 	var _majorVersion string
+
 	re := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
 	if re.MatchString(version) {
 		_majorVersion = re.FindStringSubmatch(version)[1]
 	} else {
 		return 0, errors.New("invalid version")
 	}
+
 	majorVersion, err := strconv.ParseUint(_majorVersion, 10, 64)
 	if err != nil {
 		return 0, err
 	}
+
 	return majorVersion, nil
 }
 

@@ -135,7 +135,7 @@ func createVersion0Database() {
 			"migrate", 
 			"2cb5fed12b27c377de172eb922161838b1343adf55dbd9db39aa50391f1fc2c7", 
 			"/////gAAAAAAA="
-			);
+		);
 	`)
 }
 
@@ -151,7 +151,7 @@ func TestCreateVersion0Database(t *testing.T) {
 	closeDatabase()
 }
 
-func TestMigrateVersion0To1(t *testing.T) {
+func TestMigrateVersion0Database(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
 	createVersion0Database()
@@ -176,7 +176,10 @@ func createVersion1Database() {
 			"clipboard_item_time", 
 			"clipboard_item_text", 
 			"clipboard_item_hash", 
-			"clipboard_item_data") VALUES ("499", 
+			"clipboard_item_data"
+		) 
+		VALUES (
+			"499", 
 			"2022-03-13 13:22:43.238644233+08:00", 
 			"2022-03-13 13:22:43.238644233+08:00", 
 			"", 
@@ -219,7 +222,7 @@ func TestCreateVersion1Database(t *testing.T) {
 	closeDatabase()
 }
 
-func TestMigrateVersion1To2(t *testing.T) {
+func TestMigrateVersion1Database(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
 	createVersion1Database()
@@ -244,7 +247,10 @@ func createVersion2Database() {
 			"clipboard_item_time", 
 			"clipboard_item_text", 
 			"clipboard_item_hash", 
-			"clipboard_item_data") VALUES ("499", 
+			"clipboard_item_data"
+		) 
+		VALUES (
+			"499", 
 			"2022-03-13 13:22:43.238644233+08:00", 
 			"2022-03-13 13:22:43.238644233+08:00", 
 			"", 
@@ -321,8 +327,8 @@ func createVersion2Database() {
 				rowid, 
 				clipboard_item_text
 			) 
-			VALUES (n
-				ew.clipboard_item_time, 
+			VALUES (
+				new.clipboard_item_time, 
 				new.clipboard_item_text
 			);
 		END;
@@ -350,7 +356,7 @@ func TestCreateVersion2Database(t *testing.T) {
 	closeDatabase()
 }
 
-func TestMigrateVersion2To3(t *testing.T) {
+func TestMigrateVersion2Database(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
 	createVersion2Database()

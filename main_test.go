@@ -345,10 +345,15 @@ func TestClipboardItemToGinH(t *testing.T) {
 }
 
 func TestInsertClipboardItem(t *testing.T) {
+	var _item ClipboardItem
+	var item2 ClipboardItem
+
 	gin.SetMode(gin.ReleaseMode)
 	connectDatabase("file::memory:?cache=shared")
 	migrateVersion()
-	item := clipboardItemToGinH(preparationClipboardItem())
+	_item = preparationClipboardItem()
+	_item.ClipboardItemText = `'; DELETE TABLE clipboard_items; --`
+	item := clipboardItemToGinH(_item)
 	r := setupRouter()
 	w := httptest.NewRecorder()
 
@@ -364,6 +369,10 @@ func TestInsertClipboardItem(t *testing.T) {
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
+	db.Where("clipboard_item_time = ?", item["ClipboardItemTime"]).First(&item2)
+	item3 := clipboardItemToGinH(item2)
+	item = reloadJSON(item)
+	assert.Equal(t, item, item3)
 	closeDatabase()
 }
 
@@ -452,6 +461,8 @@ func TestDeleteClipboardItem(t *testing.T) {
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
+	err := db.Where("clipboard_item_time = ?", _item.ClipboardItemTime).First(&_item).Error
+	assert.Error(t, err)
 	closeDatabase()
 }
 
@@ -875,10 +886,10 @@ func TestUpdateClipboardItem(t *testing.T) {
 	item := preparationClipboardItem()
 	db.Create(&item)
 
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/ClipboardItem/%d", item.ClipboardItemTime), strings.NewReader(`{"clipboardItemText": "test"}`))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/ClipboardItem/%d", item.ClipboardItemTime), strings.NewReader(`{"clipboardItemText": "';DROP TABLE clipboard_items;"}`))
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	item.ClipboardItemText = "test"
+	item.ClipboardItemText = `';DROP TABLE clipboard_items;`
 	expected := gin.H{
 		"status":        http.StatusOK,
 		"message":       "ClipboardItem updated successfully",
@@ -887,6 +898,9 @@ func TestUpdateClipboardItem(t *testing.T) {
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
+	var item2 ClipboardItem
+	db.First(&item2)
+	assert.Equal(t, item, item2)
 	closeDatabase()
 }
 

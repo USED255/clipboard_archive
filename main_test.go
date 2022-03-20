@@ -50,10 +50,8 @@ func toBase64(s string) string {
 func TestToBase64(t *testing.T) {
 	s := "The quick brown fox jumps over the lazy dog"
 	b := toBase64(s)
-	if b == "" {
-		t.Fatalf("Expected non-empty string, got %s", b)
-		return
-	}
+
+	assert.NotEmpty(t, b)
 }
 
 func toSha256(s string) string {
@@ -63,10 +61,8 @@ func toSha256(s string) string {
 func TestToSha256(t *testing.T) {
 	s := "The quick brown fox jumps over the lazy dog"
 	b := toSha256(s)
-	if b == "" {
-		t.Fatalf("Expected non-empty string, got %s", b)
-		return
-	}
+
+	assert.NotEmpty(t, b)
 }
 
 func closeDatabase() {
@@ -85,6 +81,7 @@ func TestCloseDatabase(t *testing.T) {
 
 func TestConnectDatabase(t *testing.T) {
 	connectDatabase("file::memory:?cache=shared")
+
 	assert.NotNil(t, db)
 
 	closeDatabase()
@@ -94,7 +91,9 @@ func TestMigrateVersion(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
 	migrateVersion()
+
 	migrateVersion()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, version, config.Value)
 
@@ -104,7 +103,9 @@ func TestMigrateVersion(t *testing.T) {
 func TestMigrateVersionInitializingDatabase(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
+
 	migrateVersion()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, version, config.Value)
 
@@ -126,9 +127,12 @@ func createVersion0Database() {
 func TestCreateVersion0Database(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
+
 	createVersion0Database()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, "", config.Value)
+
 	closeDatabase()
 }
 
@@ -136,7 +140,9 @@ func TestMigrateVersion0To1(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
 	createVersion0Database()
+
 	migrateVersion()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, version, config.Value)
 
@@ -168,9 +174,12 @@ func createVersion1Database() {
 func TestCreateVersion1Database(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
+
 	createVersion1Database()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, "1.0.0", config.Value)
+
 	closeDatabase()
 }
 
@@ -178,7 +187,9 @@ func TestMigrateVersion1To2(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
 	createVersion1Database()
+
 	migrateVersion()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, version, config.Value)
 
@@ -245,9 +256,12 @@ FROM clipboard_items;
 func TestCreateVersion2Database(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
+
 	createVersion2Database()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, "2.0.0", config.Value)
+
 	closeDatabase()
 }
 
@@ -255,7 +269,9 @@ func TestMigrateVersion2To3(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")
 	createVersion2Database()
+
 	migrateVersion()
+
 	db.First(&config, "key = ?", "version")
 	assert.Equal(t, version, config.Value)
 
@@ -1114,61 +1130,37 @@ func TestGetClipboardItemCount(t *testing.T) {
 
 func TestGetMajorVersion(t *testing.T) {
 	v, err := getMajorVersion("1.2.3")
-	if err != nil {
-		t.Fatalf("Error: %s", err)
-		return
-	}
-	if v != 1 {
-		t.Fatalf("Expected 1, got %d", v)
-		return
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(1), v)
+
 	v, err = getMajorVersion("0.0.0")
-	if err != nil {
-		t.Fatalf("Error: %s", err)
-		return
-	}
-	if v != 0 {
-		t.Fatalf("Expected 0, got %d", v)
-		return
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(0), v)
+
 	v, err = getMajorVersion("65535.0.0")
-	if err != nil {
-		t.Fatalf("Error: %s", err)
-		return
-	}
-	if v != 65535 {
-		t.Fatalf("Expected 65535, got %d", v)
-		return
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(65535), v)
 }
 
 func TestGetMajorVersionError(t *testing.T) {
 	v, err := getMajorVersion("a")
-	if err == nil {
-		t.Fatalf("Expected error, got %d", v)
-		return
-	}
+	assert.Error(t, err)
+	assert.Equal(t, uint64(0), v)
+
 	v, err = getMajorVersion("1.1.1.1")
-	if err == nil {
-		t.Fatalf("Expected error, got %d", v)
-		return
-	}
+	assert.Error(t, err)
+	assert.Equal(t, uint64(0), v)
+
 	v, err = getMajorVersion("-1.0.0")
-	if err == nil {
-		t.Fatalf("Expected error, got %d", v)
-		return
-	}
+	assert.Error(t, err)
+	assert.Equal(t, uint64(0), v)
+
 	v, err = getMajorVersion("184467440737095516150.0.0")
-	if err == nil {
-		t.Fatalf("Expected error, got %d", v)
-		return
-	}
+	assert.Error(t, err)
+	assert.Equal(t, uint64(0), v)
 }
 
 func TestGetUnixMillisTimestamp(t *testing.T) {
 	ts := getUnixMillisTimestamp()
-	if ts < 0 {
-		t.Fatalf("Expected positive number, got %d", ts)
-		return
-	}
+	assert.True(t, ts > 0)
 }

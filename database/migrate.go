@@ -45,13 +45,13 @@ migrate:
 	case currentMajorVersion:
 		return
 	case 2:
-		MigrateVersion2To3()
+		migrateVersion2To3()
 		goto migrate
 	case 1:
-		MigrateVersion1To2()
+		migrateVersion1To2()
 		goto migrate
 	case 0:
-		MigrateVersion0To1()
+		migrateVersion0To1()
 		goto migrate
 	default:
 		log.Fatal("Unsupported version: ", config.Value)
@@ -76,7 +76,7 @@ func initializingDatabase() {
 	tx.Commit()
 }
 
-func MigrateVersion2To3() {
+func migrateVersion2To3() {
 	log.Println("Migrating to 3.0.0")
 
 	tx := Orm.Begin()
@@ -98,7 +98,7 @@ func MigrateVersion2To3() {
 	tx.Commit()
 }
 
-func MigrateVersion1To2() {
+func migrateVersion1To2() {
 	log.Println("Migrating to 2.0.0")
 
 	Query := `
@@ -128,7 +128,7 @@ func MigrateVersion1To2() {
 	tx.Commit()
 }
 
-func MigrateVersion0To1() {
+func migrateVersion0To1() {
 	log.Println("Migrating to 1.0.0")
 
 	tx := Orm.Begin()

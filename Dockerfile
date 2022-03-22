@@ -1,4 +1,4 @@
-FROM golang:latest AS build
+FROM golang:1.17-alpine AS build
 WORKDIR /
 COPY . /
 RUN    go env -w CGO_ENABLED=0 \

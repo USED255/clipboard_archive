@@ -1,4 +1,4 @@
-name: Publish Container 
+name: Publish Container
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -6,12 +6,12 @@ name: Publish Container
 # documentation.
 
 on:
-#  schedule:
-#    - cron: '20 15 * * *'
+  #  schedule:
+  #    - cron: '20 15 * * *'
   push:
     #branches: [ master ]
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
+    tags: ["v*.*.*"]
 #  pull_request:
 #    branches: [ master ]
 
@@ -23,7 +23,6 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,7 +32,6 @@ jobs:
       id-token: write
 
     steps:
-
       - name: downcase IMAGE_NAME
         run: |
           echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
@@ -47,7 +45,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: sigstore/cosign-installer@1e95c1de343b5b0c23352d6417ee3e48d5bcd422
         with:
-          cosign-release: 'v1.4.0'
+          cosign-release: "v1.4.0"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -67,7 +65,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1 
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -111,3 +109,9 @@ jobs:
           src: ghcr.io/used255/clipboard_archive:latest
           dst: |
             docker.io/used255/clipboard_archive:latest
+
+      - name: Sync README
+        uses: meeDamian/sync-readme@v1.0.6
+        with:
+          pass: ${{ secrets.DOCKER_PASS }}
+          description: https://github.com/USED255/clipboard_archive

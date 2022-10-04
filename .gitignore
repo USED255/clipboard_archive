@@ -1,6 +1,5 @@
 *.db
 *.exe
-*.1
-.dot
+.test
 clipboard_archive
 coverage.txt

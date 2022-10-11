@@ -4,9 +4,9 @@ go 1.17
 
 require (
 	github.com/gin-gonic/gin v1.8.1
-	github.com/glebarez/sqlite v1.4.8
+	github.com/glebarez/sqlite v1.5.0
 	github.com/stretchr/testify v1.8.0
-	gorm.io/gorm v1.23.10
+	gorm.io/gorm v1.24.0
 )
 
 require (

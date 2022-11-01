@@ -7,9 +7,10 @@ on:
       - master
     paths:
       - "README.md"
+      - ".github/workflows/sync-readme.yml"
 
 jobs:
-  build:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

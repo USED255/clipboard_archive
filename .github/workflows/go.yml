@@ -4,11 +4,23 @@ on:
   workflow_dispatch:
   push:
     branches: [master]
+    paths:
+      - "*.go"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/go.yml"
   pull_request:
     branches: [master]
+    paths:
+      - "*.go"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/go.yml"
 
 jobs:
-  build:
+  go:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

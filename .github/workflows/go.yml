@@ -1,6 +1,7 @@
 name: Go
 
 on:
+  workflow_dispatch:
   push:
     branches: [master]
   pull_request:
@@ -26,7 +27,4 @@ jobs:
       - uses: codecov/codecov-action@v3
         with:
           files: ./coverage.txt
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          fail_ci_if_error: true # optional (default = false)
           verbose: true # optional (default = false)

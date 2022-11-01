@@ -1,0 +1,22 @@
+name: Sync README
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - "README.md"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Sync README
+        uses: meeDamian/sync-readme@v1.0.6
+        with:
+          pass: ${{ secrets.DOCKER_PASS }}
+          description: https://github.com/USED255/clipboard_archive

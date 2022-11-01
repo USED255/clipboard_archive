@@ -23,9 +23,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
-      id-token: write
 
     steps:
       # Login against a Docker registry except on PR
@@ -55,6 +52,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: tags
+        env: 
+          tags: ${{ steps.meta.outputs.tags }}
+        run: |
+          echo "tags=${tags/${{ env.REGISTRY }}/docker.io}" >>${GITHUB_ENV}
+          echo ${{ env.tags }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -72,6 +76,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
+            ${{ env.tags }}
             docker.io/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -83,7 +88,6 @@ jobs:
     needs:
       - build
     permissions:
-      contents: read
       id-token: write
     steps:
       # Install the cosign tool except on PR

@@ -36,6 +36,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -50,14 +51,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: tags
-        env: 
-          tags: ${{ steps.meta.outputs.tags }}
-        run: |
-          echo "tags=${tags/${{ env.REGISTRY }}/docker.io}" >>${GITHUB_ENV}
-          echo ${{ env.tags }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            ${{ env.IMAGE_NAME }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -76,8 +72,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ${{ env.tags }}
-            docker.io/${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

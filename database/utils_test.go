@@ -38,5 +38,3 @@ func TestGetMajorVersionError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, uint64(0), v)
 }
-
-

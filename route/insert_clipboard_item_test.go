@@ -19,19 +19,19 @@ func TestInsertClipboardItem(t *testing.T) {
 
 	item := preparationClipboardItem()
 	item.ClipboardItemText = `'; DELETE TABLE clipboard_items; --`
-	item_req := clipboardItemToGinH(item)
+	itemReq := clipboardItemToGinH(item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(item_req)))
+	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	item_req["Index"] = 1
+	itemReq["Index"] = 1
 	expected := gin.H{
 		"status":        http.StatusCreated,
 		"message":       "ClipboardItem created successfully",
-		"ClipboardItem": item_req,
+		"ClipboardItem": itemReq,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -76,11 +76,11 @@ func TestInsertClipboardItemUniqueError(t *testing.T) {
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
-	item_req := clipboardItemToGinH(item)
+	itemReq := clipboardItemToGinH(item)
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(item_req)))
+	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusConflict, w.Code)
@@ -101,10 +101,10 @@ func TestInsertClipboardItemDatabaseError(t *testing.T) {
 	database.ConnectDatabase("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item_req := clipboardItemToGinH(preparationClipboardItem())
+	itemReq := clipboardItemToGinH(preparationClipboardItem())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(item_req)))
+	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)

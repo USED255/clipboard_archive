@@ -1,4 +1,4 @@
-name: Coverage
+name: Test
 
 on:
   workflow_dispatch:
@@ -8,14 +8,14 @@ on:
       - "**/*.go"
       - "go.mod"
       - "go.sum"
-      - ".github/workflows/go.yml"
+      - ".github/workflows/test.yml"
   pull_request:
     paths:
       - "*.go"
       - "**/*.go"
       - "go.mod"
       - "go.sum"
-      - ".github/workflows/go.yml"
+      - ".github/workflows/test.yml"
 
 jobs:
   test:

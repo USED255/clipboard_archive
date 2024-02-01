@@ -3,6 +3,8 @@ name: Check Go modules
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "master"
     paths:
       - "go.mod"
       - "go.sum"

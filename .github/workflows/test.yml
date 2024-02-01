@@ -3,16 +3,16 @@ name: Test
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "master"
     paths:
-      - "*.go"
-      - "**/*.go"
+      - "**.go"
       - "go.mod"
       - "go.sum"
       - ".github/workflows/test.yml"
   pull_request:
     paths:
-      - "*.go"
-      - "**/*.go"
+      - "**.go"
       - "go.mod"
       - "go.sum"
       - ".github/workflows/test.yml"
@@ -39,6 +39,3 @@ jobs:
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.txt
-          verbose: true # optional (default = false)

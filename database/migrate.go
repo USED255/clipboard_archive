@@ -36,7 +36,6 @@ func migrateVersion() {
 
 	for {
 		databaseVersion = getDatabaseVersion()
-		log.Println("Current version: ", config.Value)
 
 		switch databaseVersion {
 		case currentMajorVersion:
@@ -79,7 +78,7 @@ func initializingDatabase() {
 }
 
 func migrateVersion2To3() {
-	log.Println("Migrating to 3.0.0")
+	log.Println("Migrating to version 3")
 	tx := Orm.Begin()
 	defer func() {
 		if err := recover(); err != nil {
@@ -102,35 +101,41 @@ func migrateVersion2To3() {
 }
 
 func migrateVersion1To2() {
-	log.Println("Migrating to 2.0.0")
-
 	tx := Orm.Begin()
+	defer func() {
+		if err := recover(); err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+	}()
+
 	err := tx.Exec(createFts5TableQuery).Error
 	if err != nil {
-		tx.Rollback()
-		log.Fatal("Migration failed: ", err)
+		panic(err)
 	}
 	err = tx.Exec(insertFts5TableQuery).Error
 	if err != nil {
-		tx.Rollback()
-		log.Fatal("Migration failed: ", err)
+		panic(err)
 	}
 	err = tx.Save(&Config{Key: "version", Value: "2.0.0"}).Error
 	if err != nil {
-		tx.Rollback()
-		log.Fatal("Migration failed: ", err)
+		panic(err)
 	}
 	tx.Commit()
 }
 
 func migrateVersion0To1() {
-	log.Println("Migrating to 1.0.0")
-
 	tx := Orm.Begin()
+	defer func() {
+		if err := recover(); err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+	}()
+
 	err := tx.Create(&Config{Key: "version", Value: "1.0.0"}).Error
 	if err != nil {
-		tx.Rollback()
-		log.Fatal("Migration failed: ", err)
+		panic(err)
 	}
 	tx.Commit()
 }

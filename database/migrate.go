@@ -6,10 +6,34 @@ import (
 
 const version = "3.0.0"
 
-func MigrateVersion() {
-	var _count int64
+func getDatabaseVersion() uint64 {
 	var config Config
 	var configMajorVersion uint64
+
+	Orm.First(&config, "key = ?", "version")
+	if config.Key == "" {
+		return 0
+	}
+
+	configMajorVersion, err = getMajorVersion(config.Value)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return configMajorVersion
+}
+
+func databaseIsNew() bool {
+	var _count int64
+	Orm.Model(&ClipboardItem{}).Count(&_count)
+	count := _count
+	Orm.Model(&Config{}).Count(&_count)
+	count = count + _count
+	return count == 0
+}
+
+func MigrateVersion() {
+	var config Config
+	var databaseVersion uint64
 
 	currentMajorVersion, err := getMajorVersion(version)
 	if err != nil {
@@ -21,42 +45,30 @@ func MigrateVersion() {
 		log.Fatal(err)
 	}
 
-	Orm.Model(&ClipboardItem{}).Count(&_count)
-	count := _count
-	Orm.Model(&Config{}).Count(&_count)
-	count = count + _count
-	if count == 0 {
+	if databaseIsNew() {
 		initializingDatabase()
 	}
 
-migrate:
-	Orm.First(&config, "key = ?", "version")
-	if config.Key == "" {
-		configMajorVersion = 0
-	} else {
-		configMajorVersion, err = getMajorVersion(config.Value)
-		if err != nil {
-			log.Fatal(err)
+	for {
+		databaseVersion = getDatabaseVersion()
+		log.Println("Current version: ", config.Value)
+
+		switch databaseVersion {
+		case currentMajorVersion:
+			return
+		case 2:
+			migrateVersion2To3()
+			continue
+		case 1:
+			migrateVersion1To2()
+			continue
+		case 0:
+			migrateVersion0To1()
+			continue
+		default:
+			log.Fatal("Unsupported version: ", config.Value)
 		}
 	}
-	log.Println("Current version: ", config.Value)
-
-	switch configMajorVersion {
-	case currentMajorVersion:
-		return
-	case 2:
-		migrateVersion2To3()
-		goto migrate
-	case 1:
-		migrateVersion1To2()
-		goto migrate
-	case 0:
-		migrateVersion0To1()
-		goto migrate
-	default:
-		log.Fatal("Unsupported version: ", config.Value)
-	}
-
 }
 
 func initializingDatabase() {
@@ -101,21 +113,13 @@ func migrateVersion2To3() {
 func migrateVersion1To2() {
 	log.Println("Migrating to 2.0.0")
 
-	Query := `
-	INSERT INTO clipboard_items_fts (
-		rowid, 
-		clipboard_item_text
-	)
-	SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
-	FROM clipboard_items;
-	`
 	tx := Orm.Begin()
 	err := tx.Exec(CreateFts5TableQuery).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal("Migration failed: ", err)
 	}
-	err = tx.Exec(Query).Error
+	err = tx.Exec(InsertFts5TableQuery).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal("Migration failed: ", err)

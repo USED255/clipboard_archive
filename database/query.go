@@ -53,3 +53,12 @@ const CreateFts5TableQuery = `
 		);
 	END;
 `
+
+const InsertFts5TableQuery = `
+INSERT INTO clipboard_items_fts (
+	rowid, 
+	clipboard_item_text
+)
+SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
+FROM clipboard_items;
+`

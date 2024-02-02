@@ -1,8 +1,20 @@
 package database
 
-const Query1 = `CREATE TABLE "clipboard_items" ("id" integer,"created_at" datetime,"updated_at" datetime,"deleted_at" datetime,"clipboard_item_time" integer UNIQUE,"clipboard_item_text" text,"clipboard_item_hash" text UNIQUE,"clipboard_item_data" text,PRIMARY KEY ("id"))`
+const CreateClipboardItemsTableQuery = `
+CREATE TABLE "clipboard_items" (
+	"id" integer,
+	"created_at" datetime,
+	"updated_at" datetime,
+	"deleted_at" datetime,
+	"clipboard_item_time" integer UNIQUE,
+	"clipboard_item_text" text,
+	"clipboard_item_hash" text UNIQUE,
+	"clipboard_item_data" text,
+	PRIMARY KEY ("id")
+)
+`
 
-const Query2 = `
+const InsertClipboardItemsTableQuery = `
 INSERT INTO "main"."clipboard_items" (
 	"id", 
 	"created_at", 
@@ -25,7 +37,7 @@ VALUES (
 );
 `
 
-const Query3 = `
+const CreateConfigsTableQuery = `
 CREATE TABLE "configs" (
 	"key" text,
 	"value" text,
@@ -33,13 +45,3 @@ CREATE TABLE "configs" (
 );
 `
 
-const Query4 = CreateFts5TableQuery
-
-const Query5 = `
-INSERT INTO clipboard_items_fts (
-	rowid, 
-	clipboard_item_text
-)
-SELECT clipboard_items.clipboard_item_time, clipboard_items.clipboard_item_text 
-FROM clipboard_items;
-`

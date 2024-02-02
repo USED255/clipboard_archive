@@ -80,23 +80,24 @@ func initializingDatabase() {
 
 func migrateVersion2To3() {
 	log.Println("Migrating to 3.0.0")
-
 	tx := Orm.Begin()
-	err := tx.Migrator().DropColumn(&ClipboardItem{}, "index")
-	if err != nil {
-		tx.Rollback()
-		log.Fatal("Migration failed: ", err)
+	defer func() {
+		if err := recover(); err != nil {
+			tx.Rollback()
+			log.Fatal("Migration failed: ", err)
+		}
+	}()
+
+	if err := tx.Migrator().DropColumn(&ClipboardItem{}, "index"); err != nil {
+		panic(err)
 	}
-	err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
-	if err != nil {
-		tx.Rollback()
-		log.Fatal("Migration failed: ", err)
+	if err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index"); err != nil {
+		panic(err)
 	}
-	err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error
-	if err != nil {
-		tx.Rollback()
-		log.Fatal("Migration failed: ", err)
+	if err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error; err != nil {
+		panic(err)
 	}
+
 	tx.Commit()
 }
 

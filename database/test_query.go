@@ -11,7 +11,7 @@ CREATE TABLE "clipboard_items" (
 	"clipboard_item_hash" text UNIQUE,
 	"clipboard_item_data" text,
 	PRIMARY KEY ("id")
-)
+);
 INSERT INTO "main"."clipboard_items" (
 	"id", 
 	"created_at", 

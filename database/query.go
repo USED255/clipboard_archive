@@ -1,6 +1,6 @@
 package database
 
-const CreateFts5TableQuery = `
+const createFts5TableQuery = `
 	CREATE VIRTUAL TABLE clipboard_items_fts USING fts5(
 		clipboard_item_time, 
 		clipboard_item_text, 
@@ -54,7 +54,7 @@ const CreateFts5TableQuery = `
 	END;
 `
 
-const InsertFts5TableQuery = `
+const insertFts5TableQuery = `
 INSERT INTO clipboard_items_fts (
 	rowid, 
 	clipboard_item_text

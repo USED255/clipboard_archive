@@ -28,12 +28,9 @@ func Start() {
 	}
 
 	log.Println("Welcome 🐱‍🏍")
-	log.Println("Clipboard Archive Version: ", database.Version)
-	database.ConnectDatabase("clipboard_archive.db")
-	database.MigrateVersion()
+	database.Open("clipboard_archive.db")
 	go func() {
-		err := route.SetupRouter().Run(*bindFlagPtr)
-		if err != nil {
+		if err := route.SetupRouter().Run(*bindFlagPtr); err != nil {
 			log.Fatal(err)
 		}
 	}()

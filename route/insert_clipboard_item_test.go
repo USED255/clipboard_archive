@@ -13,8 +13,7 @@ import (
 
 func TestInsertClipboardItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -42,13 +41,12 @@ func TestInsertClipboardItem(t *testing.T) {
 	database.Orm.Where("clipboard_item_time = ?", item.ClipboardItemTime).First(&item2)
 	assert.Equal(t, item, item2)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestInsertClipboardItemBindJsonError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	w := httptest.NewRecorder()
@@ -66,13 +64,12 @@ func TestInsertClipboardItemBindJsonError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestInsertClipboardItemUniqueError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -93,14 +90,16 @@ func TestInsertClipboardItemUniqueError(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestInsertClipboardItemDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
 	r := SetupRouter()
 
+	database.OpenNoDatabase()
+	defer database.Close()
+	
 	itemReq := clipboardItemToGinH(preparationClipboardItem())
 
 	w := httptest.NewRecorder()
@@ -119,5 +118,4 @@ func TestInsertClipboardItemDatabaseError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
 }

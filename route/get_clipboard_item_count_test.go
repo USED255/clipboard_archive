@@ -12,8 +12,7 @@ import (
 
 func TestGetClipboardItemCount(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 	item := preparationClipboardItem()
 	database.Orm.Create(&item)
@@ -33,5 +32,5 @@ func TestGetClipboardItemCount(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }

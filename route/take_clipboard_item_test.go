@@ -13,8 +13,7 @@ import (
 
 func TestTakeClipboardItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -35,13 +34,12 @@ func TestTakeClipboardItems(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestTakeClipboardItemsParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -62,13 +60,12 @@ func TestTakeClipboardItemsParamsError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestTakeClipboardItemsNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -88,14 +85,16 @@ func TestTakeClipboardItemsNotFoundError(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestTakeClipboardItemsDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
 	r := SetupRouter()
 
+	database.OpenNoDatabase()
+	defer database.Close()
+	
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
 	r.ServeHTTP(w, req)
@@ -110,6 +109,4 @@ func TestTakeClipboardItemsDatabaseError(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	delete(got, "error")
 	assert.Equal(t, expected, got)
-
-	database.CloseDatabase()
 }

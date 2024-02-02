@@ -7,14 +7,14 @@ import (
 )
 
 func TestConnectDatabase(t *testing.T) {
-	ConnectDatabase("file::memory:?cache=shared")
+	connectDatabase("file::memory:?cache=shared")
 
 	assert.NotNil(t, Orm)
 
-	CloseDatabase()
+	Close()
 }
 
 func TestCloseDatabase(t *testing.T) {
-	ConnectDatabase("file::memory:?cache=shared")
-	CloseDatabase()
+	connectDatabase("file::memory:?cache=shared")
+	Close()
 }

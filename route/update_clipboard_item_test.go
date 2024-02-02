@@ -14,8 +14,7 @@ import (
 
 func TestUpdateClipboardItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -40,13 +39,12 @@ func TestUpdateClipboardItem(t *testing.T) {
 	database.Orm.First(&item2)
 	assert.Equal(t, item, item2)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestUpdateClipboardItemParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	w := httptest.NewRecorder()
@@ -64,13 +62,12 @@ func TestUpdateClipboardItemParamsError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestUpdateClipboardItemBindJsonError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -91,13 +88,12 @@ func TestUpdateClipboardItemBindJsonError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestUpdateClipboardItemNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 	item := preparationClipboardItem()
 	database.Orm.Create(&item)
@@ -116,16 +112,15 @@ func TestUpdateClipboardItemNotFoundError(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestUpdateClipboardItemDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	database.Orm.Create(&item)
+	database.OpenNoDatabase()
+	defer database.Close()
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/ClipboardItem/1", strings.NewReader(`{"clipboardItemText": "test"}`))
@@ -142,5 +137,4 @@ func TestUpdateClipboardItemDatabaseError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
 }

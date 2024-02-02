@@ -8,12 +8,12 @@ import (
 
 func TestCreateVersion0Database(t *testing.T) {
 	var config Config
-	ConnectDatabase("file::memory:?cache=shared")
+	connectDatabase("file::memory:?cache=shared")
 
 	createVersion0Database()
 
 	Orm.First(&config, "key = ?", "version")
 	assert.Equal(t, "", config.Value)
 
-	CloseDatabase()
+	Close()
 }

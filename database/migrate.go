@@ -22,7 +22,7 @@ func getDatabaseVersion() uint64 {
 	return configMajorVersion
 }
 
-func MigrateVersion() {
+func migrateVersion() {
 	var config Config
 	var databaseVersion uint64
 
@@ -65,7 +65,7 @@ func initializingDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = tx.Exec(CreateFts5TableQuery).Error
+	err = tx.Exec(createFts5TableQuery).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal(err)
@@ -105,12 +105,12 @@ func migrateVersion1To2() {
 	log.Println("Migrating to 2.0.0")
 
 	tx := Orm.Begin()
-	err := tx.Exec(CreateFts5TableQuery).Error
+	err := tx.Exec(createFts5TableQuery).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal("Migration failed: ", err)
 	}
-	err = tx.Exec(InsertFts5TableQuery).Error
+	err = tx.Exec(insertFts5TableQuery).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal("Migration failed: ", err)

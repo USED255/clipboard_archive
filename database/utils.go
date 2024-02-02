@@ -2,9 +2,15 @@ package database
 
 import (
 	"errors"
+	"log"
 	"regexp"
 	"strconv"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 )
+
+
 
 func getMajorVersion(version string) (uint64, error) {
 	var _majorVersion string
@@ -22,4 +28,14 @@ func getMajorVersion(version string) (uint64, error) {
 	}
 
 	return majorVersion, nil
+}
+
+func connectDatabase(dns string) {
+	if Orm != nil {
+		log.Fatalf("Database already connected")
+	}
+	Orm, err = gorm.Open(sqlite.Open(dns), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }

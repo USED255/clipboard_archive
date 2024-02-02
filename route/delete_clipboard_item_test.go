@@ -13,8 +13,7 @@ import (
 
 func TestDeleteClipboardItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -38,13 +37,12 @@ func TestDeleteClipboardItem(t *testing.T) {
 	err := database.Orm.Where("clipboard_item_time = ?", item.ClipboardItemTime).First(&item).Error
 	assert.Error(t, err)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestDeleteClipboardItemParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	w := httptest.NewRecorder()
@@ -62,13 +60,12 @@ func TestDeleteClipboardItemParamsError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestDeleteClipboardItemNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	w := httptest.NewRecorder()
@@ -85,5 +82,5 @@ func TestDeleteClipboardItemNotFoundError(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }

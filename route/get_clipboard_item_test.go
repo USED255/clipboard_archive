@@ -13,8 +13,7 @@ import (
 
 func TestGetClipboardItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -47,13 +46,12 @@ func TestGetClipboardItems(t *testing.T) {
 	delete(got, "function_end_time")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsStartTimestampQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -86,13 +84,12 @@ func TestGetClipboardItemsStartTimestampQuery(t *testing.T) {
 	delete(got, "function_end_time")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsStartTimestampQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -113,13 +110,12 @@ func TestGetClipboardItemsStartTimestampQueryError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsEndTimeStampQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -152,13 +148,12 @@ func TestGetClipboardItemsEndTimeStampQuery(t *testing.T) {
 	delete(got, "function_end_time")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsEndTimeStampQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -179,13 +174,12 @@ func TestGetClipboardItemsEndTimeStampQueryError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsLimitQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -221,13 +215,12 @@ func TestGetClipboardItemsLimitQuery(t *testing.T) {
 	delete(got, "function_end_time")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsLimitQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -248,13 +241,12 @@ func TestGetClipboardItemsLimitQueryError(t *testing.T) {
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsSearchQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -287,13 +279,12 @@ func TestGetClipboardItemsSearchQuery(t *testing.T) {
 	delete(got, "function_end_time")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }
 
 func TestGetClipboardItemsAllQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.ConnectDatabase("file::memory:?cache=shared")
-	database.MigrateVersion()
+	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	item := preparationClipboardItem()
@@ -326,5 +317,5 @@ func TestGetClipboardItemsAllQuery(t *testing.T) {
 	delete(got, "function_end_time")
 	assert.Equal(t, expected, got)
 
-	database.CloseDatabase()
+	database.Close()
 }

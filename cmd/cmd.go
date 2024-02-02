@@ -11,6 +11,8 @@ import (
 	"github.com/used255/clipboard_archive/v3/route"
 )
 
+var err error
+
 func Start() {
 	bindFlagPtr := flag.String("bind", ":8080", "bind address")
 	versionFlagPtr := flag.Bool("v", false, "show version")
@@ -30,7 +32,8 @@ func Start() {
 	log.Println("Welcome 🐱‍🏍")
 	database.Open("clipboard_archive.db")
 	go func() {
-		if err := route.SetupRouter().Run(*bindFlagPtr); err != nil {
+		err = route.SetupRouter().Run(*bindFlagPtr)
+		if err != nil {
 			log.Fatal(err)
 		}
 	}()

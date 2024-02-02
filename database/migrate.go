@@ -87,13 +87,16 @@ func migrateVersion2To3() {
 		}
 	}()
 
-	if err := tx.Migrator().DropColumn(&ClipboardItem{}, "index"); err != nil {
+	err = tx.Migrator().DropColumn(&ClipboardItem{}, "index")
+	if err != nil {
 		panic(err)
 	}
-	if err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index"); err != nil {
+	err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
+	if err != nil {
 		panic(err)
 	}
-	if err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error; err != nil {
+	err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error
+	if err != nil {
 		panic(err)
 	}
 

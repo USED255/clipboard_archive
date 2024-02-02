@@ -22,31 +22,16 @@ func getDatabaseVersion() uint64 {
 	return configMajorVersion
 }
 
-func databaseIsNew() bool {
-	var _count int64
-	Orm.Model(&ClipboardItem{}).Count(&_count)
-	count := _count
-	Orm.Model(&Config{}).Count(&_count)
-	count = count + _count
-	return count == 0
-}
-
 func MigrateVersion() {
 	var config Config
 	var databaseVersion uint64
 
+	if !Orm.Migrator().HasTable(&ClipboardItem{}) {
+		initializingDatabase()
+	}
 	currentMajorVersion, err := getMajorVersion(version)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	err = Orm.AutoMigrate(&ClipboardItem{}, &Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if databaseIsNew() {
-		initializingDatabase()
 	}
 
 	for {
@@ -75,6 +60,11 @@ func initializingDatabase() {
 	log.Println("No data in database, initializing")
 
 	tx := Orm.Begin()
+
+	err = tx.AutoMigrate(&ClipboardItem{}, &Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = tx.Exec(CreateFts5TableQuery).Error
 	if err != nil {
 		tx.Rollback()

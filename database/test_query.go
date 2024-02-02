@@ -12,9 +12,6 @@ CREATE TABLE "clipboard_items" (
 	"clipboard_item_data" text,
 	PRIMARY KEY ("id")
 )
-`
-
-const InsertClipboardItemsTableQuery = `
 INSERT INTO "main"."clipboard_items" (
 	"id", 
 	"created_at", 
@@ -44,4 +41,3 @@ CREATE TABLE "configs" (
 	PRIMARY KEY ("key")
 );
 `
-

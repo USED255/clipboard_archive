@@ -1,4 +1,4 @@
-module github.com/used255/clipboard_archive/v3
+module github.com/used255/clipboard_archive/v5
 
 go 1.19
 

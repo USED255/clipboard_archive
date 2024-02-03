@@ -8,7 +8,7 @@ import (
 	"math/rand"
 
 	"github.com/gin-gonic/gin"
-	"github.com/used255/clipboard_archive/v3/utils"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func randString(l int) string {

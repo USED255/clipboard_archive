@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/used255/clipboard_archive/v3/database"
+	"github.com/used255/clipboard_archive/v5/database"
 )
 
 func TestInsertClipboardItem(t *testing.T) {
@@ -99,7 +99,7 @@ func TestInsertClipboardItemDatabaseError(t *testing.T) {
 
 	database.OpenNoDatabase()
 	defer database.Close()
-	
+
 	itemReq := clipboardItemToGinH(preparationClipboardItem())
 
 	w := httptest.NewRecorder()

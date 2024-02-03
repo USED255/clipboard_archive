@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/used255/clipboard_archive/v3/database"
+	"github.com/used255/clipboard_archive/v5/database"
 )
 
 func insertClipboardItem(c *gin.Context) {

@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/used255/clipboard_archive/v3/database"
-	"github.com/used255/clipboard_archive/v3/route"
+	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/route"
 )
 
 var err error

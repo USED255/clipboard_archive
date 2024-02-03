@@ -1,9 +1,9 @@
 package route
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -11,53 +11,49 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func TestInsertClipboardItem(t *testing.T) {
+func TestTakeItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	item.ClipboardItemText = `'; DELETE TABLE clipboard_items; --`
-	itemReq := clipboardItemToGinH(item)
+	item := preparationItem()
+	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/Item/%d", item.ItemTime), nil)
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
-	itemReq["Index"] = 1
 	expected := gin.H{
-		"status":        http.StatusCreated,
-		"message":       "ClipboardItem created successfully",
-		"ClipboardItem": itemReq,
+		"status":  http.StatusOK,
+		"message": "Item taken successfully",
+		"Item":    item,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	item.Index = 1
-	var item2 ClipboardItem
-	database.Orm.Where("clipboard_item_time = ?", item.ClipboardItemTime).First(&item2)
-	assert.Equal(t, item, item2)
-
 	database.Close()
 }
 
-func TestInsertClipboardItemBindJsonError(t *testing.T) {
+func TestTakeItemsParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
+	item := preparationItem()
+	database.Orm.Create(&item)
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader("{}"))
+	req, _ := http.NewRequest("GET", "/api/v1/Item/a", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusBadRequest,
-		"message": "Invalid JSON",
+		"message": "Invalid ID",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -67,24 +63,23 @@ func TestInsertClipboardItemBindJsonError(t *testing.T) {
 	database.Close()
 }
 
-func TestInsertClipboardItemUniqueError(t *testing.T) {
+func TestTakeItemsNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	itemReq := clipboardItemToGinH(item)
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("GET", "/api/v1/Item/1", nil)
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusConflict, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	expected := gin.H{
-		"status":  http.StatusConflict,
-		"message": "ClipboardItem already exists",
+		"status":  http.StatusNotFound,
+		"message": "Item not found",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -93,29 +88,25 @@ func TestInsertClipboardItemUniqueError(t *testing.T) {
 	database.Close()
 }
 
-func TestInsertClipboardItemDatabaseError(t *testing.T) {
+func TestTakeItemsDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
 	database.OpenNoDatabase()
 	defer database.Close()
 
-	itemReq := clipboardItemToGinH(preparationClipboardItem())
-
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/ClipboardItem", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("GET", "/api/v1/Item/1", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusInternalServerError,
-		"message": "Error inserting ClipboardItem",
+		"message": "Error taking Item",
 	}
-	delete(expected, "error")
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	delete(got, "error")
 	assert.Equal(t, expected, got)
-
 }

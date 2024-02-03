@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func takeClipboardItem(c *gin.Context) {
-	var item ClipboardItem
+func takeItem(c *gin.Context) {
+	var item Item
 
 	_id := c.Params.ByName("id")
 	id, err := strconv.ParseInt(_id, 10, 64)
@@ -29,21 +29,21 @@ func takeClipboardItem(c *gin.Context) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  http.StatusNotFound,
-				"message": "ClipboardItem not found",
+				"message": "Item not found",
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
-			"message": "Error taking ClipboardItem",
+			"message": "Error taking Item",
 			"error":   err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":        http.StatusOK,
-		"message":       "ClipboardItem taken successfully",
-		"ClipboardItem": item,
+		"status":  http.StatusOK,
+		"message": "Item taken successfully",
+		"Item":    item,
 	})
 }

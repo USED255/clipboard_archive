@@ -5,6 +5,6 @@ func OpenNoDatabase() {
 }
 
 func createVersion0Database() {
-	Orm.Exec(CreateClipboardItemsTableQuery)
+	Orm.Exec(CreateItemsTableQuery)
 	Orm.Exec(CreateConfigsTableQuery)
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"log"
 	"regexp"
 	"strconv"
 
@@ -10,7 +9,9 @@ import (
 	"gorm.io/gorm"
 )
 
+var err error
 
+const version = 5
 
 func getMajorVersion(version string) (uint64, error) {
 	var _majorVersion string
@@ -30,12 +31,21 @@ func getMajorVersion(version string) (uint64, error) {
 	return majorVersion, nil
 }
 
-func connectDatabase(dns string) {
+func connectDatabase(dns string) error {
 	if Orm != nil {
-		log.Fatalf("Database already connected")
+		return errors.New("database already connected")
 	}
 	Orm, err = gorm.Open(sqlite.Open(dns), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
+}
+
+type ClipboardItem struct {
+	Index             int64  `gorm:"primaryKey"`
+	ClipboardItemTime int64  `json:"ItemTime" binding:"required"` // unix milliseconds timestamp
+	ClipboardItemText string `json:"ItemText"`
+	ClipboardItemHash string `gorm:"unique" json:"ItemHash"`
+	ClipboardItemData string `json:"ItemData"`
 }

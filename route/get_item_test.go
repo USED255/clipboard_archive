@@ -11,21 +11,21 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func TestGetClipboardItems(t *testing.T) {
+func TestGetItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []ClipboardItem{}
+	items := []Item{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "",
@@ -37,8 +37,8 @@ func TestGetClipboardItems(t *testing.T) {
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"count":          1,
-		"message":        "ClipboardItem found successfully",
-		"ClipboardItem":  items,
+		"message":        "Item found successfully",
+		"Item":           items,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -49,21 +49,21 @@ func TestGetClipboardItems(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsStartTimestampQuery(t *testing.T) {
+func TestGetItemsStartTimestampQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem?startTimestamp=1", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item?startTimestamp=1", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []ClipboardItem{}
+	items := []Item{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "1",
@@ -75,8 +75,8 @@ func TestGetClipboardItemsStartTimestampQuery(t *testing.T) {
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"count":          1,
-		"message":        "ClipboardItem found successfully",
-		"ClipboardItem":  items,
+		"message":        "Item found successfully",
+		"Item":           items,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -87,16 +87,16 @@ func TestGetClipboardItemsStartTimestampQuery(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsStartTimestampQueryError(t *testing.T) {
+func TestGetItemsStartTimestampQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem?startTimestamp=a", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item?startTimestamp=a", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -113,21 +113,21 @@ func TestGetClipboardItemsStartTimestampQueryError(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsEndTimeStampQuery(t *testing.T) {
+func TestGetItemsEndTimeStampQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem?endTimestamp=1844674407370955161", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item?endTimestamp=1844674407370955161", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []ClipboardItem{}
+	items := []Item{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "",
@@ -139,8 +139,8 @@ func TestGetClipboardItemsEndTimeStampQuery(t *testing.T) {
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"count":          1,
-		"message":        "ClipboardItem found successfully",
-		"ClipboardItem":  items,
+		"message":        "Item found successfully",
+		"Item":           items,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -151,16 +151,16 @@ func TestGetClipboardItemsEndTimeStampQuery(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsEndTimeStampQueryError(t *testing.T) {
+func TestGetItemsEndTimeStampQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem?endTimestamp=a", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item?endTimestamp=a", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -177,24 +177,24 @@ func TestGetClipboardItemsEndTimeStampQueryError(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsLimitQuery(t *testing.T) {
+func TestGetItemsLimitQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
-	item2 := preparationClipboardItem()
-	item2.ClipboardItemTime = 1
+	item2 := preparationItem()
+	item2.ItemTime = 1
 	database.Orm.Create(&item2)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem?limit=1", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item?limit=1", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []ClipboardItem{}
+	items := []Item{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "",
@@ -206,8 +206,8 @@ func TestGetClipboardItemsLimitQuery(t *testing.T) {
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"count":          2,
-		"message":        "ClipboardItem found successfully",
-		"ClipboardItem":  items,
+		"message":        "Item found successfully",
+		"Item":           items,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -218,16 +218,16 @@ func TestGetClipboardItemsLimitQuery(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsLimitQueryError(t *testing.T) {
+func TestGetItemsLimitQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem?limit=a", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item?limit=a", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -244,34 +244,34 @@ func TestGetClipboardItemsLimitQueryError(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsSearchQuery(t *testing.T) {
+func TestGetItemsSearchQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/ClipboardItem?search=%s", item.ClipboardItemText), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/Item?search=%s", item.ItemText), nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []ClipboardItem{}
+	items := []Item{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "",
 		"endTimestamp":   "",
 		"limit":          "",
-		"search":         item.ClipboardItemText,
+		"search":         item.ItemText,
 	}
 	expected := gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"count":          1,
-		"message":        "ClipboardItem found successfully",
-		"ClipboardItem":  items,
+		"message":        "Item found successfully",
+		"Item":           items,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -282,34 +282,34 @@ func TestGetClipboardItemsSearchQuery(t *testing.T) {
 	database.Close()
 }
 
-func TestGetClipboardItemsAllQuery(t *testing.T) {
+func TestGetItemsAllQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/ClipboardItem?startTimestamp=1&endTimestamp=1844674407370955161&limit=1&search=%s", item.ClipboardItemText), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/Item?startTimestamp=1&endTimestamp=1844674407370955161&limit=1&search=%s", item.ItemText), nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []ClipboardItem{}
+	items := []Item{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "1",
 		"endTimestamp":   "1844674407370955161",
 		"limit":          "1",
-		"search":         item.ClipboardItemText,
+		"search":         item.ItemText,
 	}
 	expected := gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"count":          1,
-		"message":        "ClipboardItem found successfully",
-		"ClipboardItem":  items,
+		"message":        "Item found successfully",
+		"Item":           items,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())

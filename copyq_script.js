@@ -2,7 +2,7 @@
 copyq:
 
 var minBytes = 250 * 1000;
-var url = "https://127.0.0.1:8080/api/v1/ClipboardItem";
+var url = "https://127.0.0.1:8080/api/v2/Item";
 
 function hasBigData() {
     var itemSize = 0;
@@ -15,26 +15,19 @@ function hasBigData() {
     return false
 }
 
-function clipboardItem(Item) {
-    ClipboardItemData = toBase64(pack(Item));
-    ClipboardItemHash = sha256sum(ClipboardItemData);
-    ClipboardItemTime = parseInt(str(Item["application/x-copyq-user-copy-time"]));
-    ClipboardItemText = str(Item[mimeText]);
-    ClipboardItemObject = {
-        "ClipboardItemTime": ClipboardItemTime,
-        "ClipboardItemText": ClipboardItemText,
-        "ClipboardItemHash": ClipboardItemHash,
-        "ClipboardItemData": ClipboardItemData
-    };
-    return JSON.stringify(ClipboardItemObject);
+function NewItem(Item) {
+    return JSON.stringify({
+        "Time": parseInt(str(Item["application/x-copyq-user-copy-time"])),
+        "Data": toBase64(pack(Item)),
+    });
 }
 
 function main() {
     if (hasBigData()) {
         return;
     }
-    ClipboardItem = clipboardItem(getItem(0));
-    networkPost(url, ClipboardItem).data;
+    Item = NewItem(getItem(0));
+    networkPost(url, Item).data;
 }
 
 main()

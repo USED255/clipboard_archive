@@ -1,56 +1,72 @@
 package database
 
 import (
+	"errors"
 	"log"
+	"strconv"
 )
 
-const version = "3.0.0"
-
-func getDatabaseVersion() uint64 {
-	var config Config
-	var configMajorVersion uint64
-
-	Orm.First(&config, "key = ?", "version")
-	if config.Key == "" {
-		return 0
-	}
-
-	configMajorVersion, err = getMajorVersion(config.Value)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return configMajorVersion
-}
-
-func migrateVersion() {
+func getDatabaseVersion() (uint64, error) {
 	var config Config
 	var databaseVersion uint64
 
-	if !Orm.Migrator().HasTable(&ClipboardItem{}) {
-		initializingDatabase()
+	Orm.First(&config, "key = ?", "version")
+	if config.Key == "" {
+		return 0, nil
 	}
-	currentMajorVersion, err := getMajorVersion(version)
-	if err != nil {
-		log.Fatal(err)
+	databaseVersion, _ = strconv.ParseUint(config.Value, 10, 64)
+	if databaseVersion != 0 {
+		return databaseVersion, nil
+	}
+	databaseVersion, _ = getMajorVersion(config.Value)
+	if databaseVersion != 0 {
+		return databaseVersion, nil
+	}
+	return 0, errors.New("invalid version")
+}
+
+func migrateVersion() error {
+	var databaseVersion uint64
+
+	if !Orm.Migrator().HasTable(&Config{}) {
+		initializingDatabase()
 	}
 
 	for {
-		databaseVersion = getDatabaseVersion()
+		databaseVersion, err = getDatabaseVersion()
+		if err != nil {
+			return err
+		}
 
 		switch databaseVersion {
-		case currentMajorVersion:
-			return
+		case version:
+			return nil
+		case 3:
+			err = migrateVersion3To4()
+			if err != nil {
+				return err
+			}
+			continue
 		case 2:
-			migrateVersion2To3()
+			err = migrateVersion2To3()
+			if err != nil {
+				return err
+			}
 			continue
 		case 1:
-			migrateVersion1To2()
+			err = migrateVersion1To2()
+			if err != nil {
+				return err
+			}
 			continue
 		case 0:
-			migrateVersion0To1()
+			err = migrateVersion0To1()
+			if err != nil {
+				return err
+			}
 			continue
 		default:
-			log.Fatal("Unsupported version: ", config.Value)
+			return errors.New("invalid version")
 		}
 	}
 }
@@ -60,16 +76,11 @@ func initializingDatabase() {
 
 	tx := Orm.Begin()
 
-	err = tx.AutoMigrate(&ClipboardItem{}, &Config{})
+	err = tx.AutoMigrate(&Item{}, &Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = tx.Exec(createFts5TableQuery).Error
-	if err != nil {
-		tx.Rollback()
-		log.Fatal(err)
-	}
-	err = tx.Create(&Config{Key: "version", Value: version}).Error
+	err = tx.Create(&Config{Key: "version", Value: strconv.Itoa(version)}).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal(err)
@@ -77,68 +88,80 @@ func initializingDatabase() {
 	tx.Commit()
 }
 
-func migrateVersion2To3() {
-	log.Println("Migrating to version 3")
+func migrateVersion3To4() error {
+	log.Println("Migrating to version 4")
 	tx := Orm.Begin()
-	defer func() {
-		if err := recover(); err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-	}()
-
-	err = tx.Migrator().DropColumn(&ClipboardItem{}, "index")
+	err = tx.Migrator().RenameColumn(&Item{}, "ItemTime", "Time")
 	if err != nil {
-		panic(err)
+		tx.Rollback()
+		return err
 	}
-	err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
+	err = tx.Migrator().RenameColumn(&Item{}, "ItemData", "Data")
 	if err != nil {
-		panic(err)
+		tx.Rollback()
+		return err
+	}
+	err = tx.Migrator().RenameTable(&Item{}, &Item{})
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+
+func migrateVersion2To3() error {
+	tx := Orm.Begin()
+	err = tx.Migrator().DropColumn(&Item{}, "index")
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Migrator().RenameColumn(&Item{}, "id", "index")
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 	err = tx.Save(&Config{Key: "version", Value: "3.0.0"}).Error
 	if err != nil {
-		panic(err)
+		tx.Rollback()
+		return err
 	}
 
 	tx.Commit()
+	return nil
 }
 
-func migrateVersion1To2() {
+func migrateVersion1To2() error {
 	tx := Orm.Begin()
-	defer func() {
-		if err := recover(); err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-	}()
 
 	err := tx.Exec(createFts5TableQuery).Error
 	if err != nil {
-		panic(err)
+		tx.Rollback()
+		return err
 	}
 	err = tx.Exec(insertFts5TableQuery).Error
 	if err != nil {
-		panic(err)
+		tx.Rollback()
+		return err
 	}
 	err = tx.Save(&Config{Key: "version", Value: "2.0.0"}).Error
 	if err != nil {
-		panic(err)
+		tx.Rollback()
+		return err
 	}
 	tx.Commit()
+	return nil
 }
 
-func migrateVersion0To1() {
+func migrateVersion0To1() error {
 	tx := Orm.Begin()
-	defer func() {
-		if err := recover(); err != nil {
-			tx.Rollback()
-			log.Fatal("Migration failed: ", err)
-		}
-	}()
 
 	err := tx.Create(&Config{Key: "version", Value: "1.0.0"}).Error
 	if err != nil {
-		panic(err)
+		tx.Rollback()
+		return err
 	}
 	tx.Commit()
+	return nil
 }

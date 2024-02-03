@@ -10,15 +10,15 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func TestGetClipboardItemCount(t *testing.T) {
+func TestGetItemCount(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/count", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item/count", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)

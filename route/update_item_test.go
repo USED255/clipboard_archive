@@ -12,43 +12,43 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func TestUpdateClipboardItem(t *testing.T) {
+func TestUpdateItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/ClipboardItem/%d", item.ClipboardItemTime), strings.NewReader(`{"clipboardItemText": "';DROP TABLE clipboard_items;"}`))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/Item/%d", item.ItemTime), strings.NewReader(`{"ItemText": "';DROP TABLE clipboard_items;"}`))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	item.ClipboardItemText = `';DROP TABLE clipboard_items;`
+	item.ItemText = `';DROP TABLE clipboard_items;`
 	expected := gin.H{
-		"status":        http.StatusOK,
-		"message":       "ClipboardItem updated successfully",
-		"ClipboardItem": item,
+		"status":  http.StatusOK,
+		"message": "Item updated successfully",
+		"Item":    item,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
-	var item2 ClipboardItem
+	var item2 Item
 	database.Orm.First(&item2)
 	assert.Equal(t, item, item2)
 
 	database.Close()
 }
 
-func TestUpdateClipboardItemParamsError(t *testing.T) {
+func TestUpdateItemParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/api/v1/ClipboardItem/a", strings.NewReader(`{"clipboardItemText": "test"}`))
+	req, _ := http.NewRequest("PUT", "/api/v1/Item/a", strings.NewReader(`{"ItemText": "test"}`))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -65,16 +65,16 @@ func TestUpdateClipboardItemParamsError(t *testing.T) {
 	database.Close()
 }
 
-func TestUpdateClipboardItemBindJsonError(t *testing.T) {
+func TestUpdateItemBindJsonError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/ClipboardItem/%d", item.ClipboardItemTime), strings.NewReader(`a`))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/Item/%d", item.ItemTime), strings.NewReader(`a`))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -91,22 +91,22 @@ func TestUpdateClipboardItemBindJsonError(t *testing.T) {
 	database.Close()
 }
 
-func TestUpdateClipboardItemNotFoundError(t *testing.T) {
+func TestUpdateItemNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
-	item := preparationClipboardItem()
+	item := preparationItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/api/v1/ClipboardItem/1", strings.NewReader(`{"clipboardItemText": "test"}`))
+	req, _ := http.NewRequest("PUT", "/api/v1/Item/1", strings.NewReader(`{"ItemText": "test"}`))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusNotFound,
-		"message": "ClipboardItem not found",
+		"message": "Item not found",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -115,7 +115,7 @@ func TestUpdateClipboardItemNotFoundError(t *testing.T) {
 	database.Close()
 }
 
-func TestUpdateClipboardItemDatabaseError(t *testing.T) {
+func TestUpdateItemDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -123,14 +123,14 @@ func TestUpdateClipboardItemDatabaseError(t *testing.T) {
 	defer database.Close()
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/api/v1/ClipboardItem/1", strings.NewReader(`{"clipboardItemText": "test"}`))
+	req, _ := http.NewRequest("PUT", "/api/v1/Item/1", strings.NewReader(`{"ItemText": "test"}`))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusInternalServerError,
-		"message": "Error updating ClipboardItem",
+		"message": "Error updating Item",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())

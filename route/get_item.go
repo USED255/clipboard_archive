@@ -9,7 +9,7 @@ import (
 	"github.com/used255/clipboard_archive/v5/utils"
 )
 
-func getClipboardItem(c *gin.Context) {
+func getItem(c *gin.Context) {
 	var startTimestamp int64
 	var endTimestamp int64
 	var limit int
@@ -27,7 +27,7 @@ func getClipboardItem(c *gin.Context) {
 		"search":         search,
 	}
 
-	items := []ClipboardItem{}
+	items := []Item{}
 
 	functionStartTime := utils.GetUnixMillisTimestamp()
 
@@ -84,7 +84,7 @@ func getClipboardItem(c *gin.Context) {
 		if tx.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  http.StatusInternalServerError,
-				"message": "Error getting ClipboardItem",
+				"message": "Error getting Item",
 				"error":   tx.Error.Error(),
 			})
 			return
@@ -95,7 +95,7 @@ func getClipboardItem(c *gin.Context) {
 		if tx.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status":  http.StatusInternalServerError,
-				"message": "Error getting ClipboardItem",
+				"message": "Error getting Item",
 				"error":   tx.Error.Error(),
 			})
 			return
@@ -106,7 +106,7 @@ func getClipboardItem(c *gin.Context) {
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
-			"message": "Error getting ClipboardItem",
+			"message": "Error getting Item",
 			"error":   tx.Error.Error(),
 		})
 		return
@@ -120,7 +120,7 @@ func getClipboardItem(c *gin.Context) {
 		"count":               count,
 		"function_start_time": functionStartTime,
 		"function_end_time":   functionEndTime,
-		"message":             "ClipboardItem found successfully",
-		"ClipboardItem":       items,
+		"message":             "Item found successfully",
+		"Item":                items,
 	})
 }

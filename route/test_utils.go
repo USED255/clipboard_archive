@@ -20,21 +20,21 @@ func randString(l int) string {
 	return string(b)
 }
 
-func preparationClipboardItem() ClipboardItem {
-	ClipboardItemText := randString(5)
-	ClipboardItemTime := utils.GetUnixMillisTimestamp()
-	ClipboardItemData := toBase64(ClipboardItemText)
-	ClipboardItemHash := toSha256(ClipboardItemData)
-	item := ClipboardItem{
-		ClipboardItemText: ClipboardItemText,
-		ClipboardItemTime: ClipboardItemTime,
-		ClipboardItemData: ClipboardItemData,
-		ClipboardItemHash: ClipboardItemHash,
+func preparationItem() Item {
+	ItemText := randString(5)
+	ItemTime := utils.GetUnixMillisTimestamp()
+	ItemData := toBase64(ItemText)
+	ItemHash := toSha256(ItemData)
+	item := Item{
+		ItemText: ItemText,
+		ItemTime: ItemTime,
+		ItemData: ItemData,
+		ItemHash: ItemHash,
 	}
 	return item
 }
 
-func clipboardItemToGinH(s ClipboardItem) gin.H {
+func ItemToGinH(s Item) gin.H {
 	var c gin.H
 	b, _ := json.Marshal(&s)
 	_ = json.Unmarshal(b, &c)

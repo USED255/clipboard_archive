@@ -1,9 +1,9 @@
 package route
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -11,49 +11,53 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func TestTakeClipboardItems(t *testing.T) {
+func TestInsertItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	database.Orm.Create(&item)
+	item := preparationItem()
+	item.ItemText = `'; DELETE TABLE clipboard_items; --`
+	itemReq := ItemToGinH(item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/ClipboardItem/%d", item.ClipboardItemTime), nil)
+	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusCreated, w.Code)
 
+	itemReq["Index"] = 1
 	expected := gin.H{
-		"status":        http.StatusOK,
-		"message":       "ClipboardItem taken successfully",
-		"ClipboardItem": item,
+		"status":  http.StatusCreated,
+		"message": "Item created successfully",
+		"Item":    itemReq,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
+	item.Index = 1
+	var item2 Item
+	database.Orm.Where("clipboard_item_time = ?", item.ItemTime).First(&item2)
+	assert.Equal(t, item, item2)
+
 	database.Close()
 }
 
-func TestTakeClipboardItemsParamsError(t *testing.T) {
+func TestInsertItemBindJsonError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	database.Orm.Create(&item)
-
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/a", nil)
+	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader("{}"))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusBadRequest,
-		"message": "Invalid ID",
+		"message": "Invalid JSON",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -63,23 +67,24 @@ func TestTakeClipboardItemsParamsError(t *testing.T) {
 	database.Close()
 }
 
-func TestTakeClipboardItemsNotFoundError(t *testing.T) {
+func TestInsertItemUniqueError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
+	item := preparationItem()
+	itemReq := ItemToGinH(item)
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
+	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusConflict, w.Code)
 
 	expected := gin.H{
-		"status":  http.StatusNotFound,
-		"message": "ClipboardItem not found",
+		"status":  http.StatusConflict,
+		"message": "Item already exists",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -88,25 +93,29 @@ func TestTakeClipboardItemsNotFoundError(t *testing.T) {
 	database.Close()
 }
 
-func TestTakeClipboardItemsDatabaseError(t *testing.T) {
+func TestInsertItemDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
 	database.OpenNoDatabase()
 	defer database.Close()
 
+	itemReq := ItemToGinH(preparationItem())
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
+	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusInternalServerError,
-		"message": "Error taking ClipboardItem",
+		"message": "Error inserting Item",
 	}
+	delete(expected, "error")
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	delete(got, "error")
 	assert.Equal(t, expected, got)
+
 }

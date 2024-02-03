@@ -8,10 +8,10 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func getClipboardItemCount(c *gin.Context) {
+func getItemCount(c *gin.Context) {
 	var count int64
 
-	database.Orm.Model(&ClipboardItem{}).Count(&count)
+	database.Orm.Model(&Item{}).Count(&count)
 	if database.Orm.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,

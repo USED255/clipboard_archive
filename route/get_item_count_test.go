@@ -18,7 +18,7 @@ func TestGetItemCount(t *testing.T) {
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/Item/count", nil)
+	req, _ := http.NewRequest("GET", "/api/v2/Item/count", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)

@@ -24,12 +24,9 @@ func preparationItem() Item {
 	ItemText := randString(5)
 	ItemTime := utils.GetUnixMillisTimestamp()
 	ItemData := toBase64(ItemText)
-	ItemHash := toSha256(ItemData)
 	item := Item{
-		ItemText: ItemText,
-		ItemTime: ItemTime,
-		ItemData: ItemData,
-		ItemHash: ItemHash,
+		Time: ItemTime,
+		Data: ItemData,
 	}
 	return item
 }

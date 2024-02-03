@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,9 +9,9 @@ import (
 )
 
 func insertItem(c *gin.Context) {
-	var item Item
+	var jsonItem jsonItem
 
-	err := c.BindJSON(&item)
+	err := c.BindJSON(&jsonItem)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
@@ -19,17 +20,20 @@ func insertItem(c *gin.Context) {
 		})
 		return
 	}
-
-	tx := database.Orm.Create(&item)
-	UniqueError := "constraint failed: UNIQUE constraint failed: clipboard_items.clipboard_item_hash (2067)"
+	data, err := base64.StdEncoding.DecodeString(jsonItem.Data)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Invalid Data",
+			"error":   err.Error(),
+		})
+		return
+	}
+	tx := database.Orm.Create(Item{
+		Time: jsonItem.Time,
+		Data: data,
+	})
 	if tx.Error != nil {
-		if tx.Error.Error() == UniqueError {
-			c.JSON(http.StatusConflict, gin.H{
-				"status":  http.StatusConflict,
-				"message": "Item already exists",
-			})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
 			"message": "Error inserting Item",
@@ -41,6 +45,6 @@ func insertItem(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  http.StatusCreated,
 		"message": "Item created successfully",
-		"Item":    item,
+		"Item":    jsonItem,
 	})
 }

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/base64"
 	"errors"
 	"log"
 	"strconv"
@@ -90,18 +91,33 @@ func initializingDatabase() {
 
 func migrateVersion3To4() error {
 	log.Println("Migrating to version 4")
+	var items []ClipboardItem
+	err = Orm.Find(&items).Error
+	if err != nil {
+		return err
+	}
 	tx := Orm.Begin()
-	err = tx.Migrator().RenameColumn(&Item{}, "ItemTime", "Time")
+	err := Orm.Migrator().CreateTable(&Item{})
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	err = tx.Migrator().RenameColumn(&Item{}, "ItemData", "Data")
-	if err != nil {
-		tx.Rollback()
-		return err
+	for _, item := range items {
+		data, err := base64.StdEncoding.DecodeString(item.ClipboardItemData)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		err = tx.Create(&Item{
+			Time: item.ClipboardItemTime,
+			Data: data,
+		}).Error
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
-	err = tx.Migrator().RenameTable(&Item{}, &Item{})
+	err = tx.Save(&Config{Key: "version", Value: "4"}).Error
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -112,12 +128,12 @@ func migrateVersion3To4() error {
 
 func migrateVersion2To3() error {
 	tx := Orm.Begin()
-	err = tx.Migrator().DropColumn(&Item{}, "index")
+	err = tx.Migrator().DropColumn(&ClipboardItem{}, "index")
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	err = tx.Migrator().RenameColumn(&Item{}, "id", "index")
+	err = tx.Migrator().RenameColumn(&ClipboardItem{}, "id", "index")
 	if err != nil {
 		tx.Rollback()
 		return err

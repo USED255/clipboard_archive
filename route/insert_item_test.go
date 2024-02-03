@@ -17,7 +17,6 @@ func TestInsertItem(t *testing.T) {
 	r := SetupRouter()
 
 	item := preparationItem()
-	item.ItemText = `'; DELETE TABLE clipboard_items; --`
 	itemReq := ItemToGinH(item)
 
 	w := httptest.NewRecorder()

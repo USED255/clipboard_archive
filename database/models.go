@@ -7,11 +7,8 @@ import (
 )
 
 type Config struct {
-	Key       string `gorm:"primary_key"`
-	Value     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	Key   string `gorm:"primary_key"`
+	Value string
 }
 
 type Item struct {

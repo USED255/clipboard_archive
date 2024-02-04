@@ -36,9 +36,9 @@ func TestRandString(t *testing.T) {
 }
 
 func TestItemToGinH(t *testing.T) {
-	ItemToGinH(preparationItem())
+	itemToGinH(preparationJsonItem())
 }
 
 func TestPreparationItem(t *testing.T) {
-	preparationItem()
+	preparationJsonItem()
 }

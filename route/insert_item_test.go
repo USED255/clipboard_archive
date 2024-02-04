@@ -16,8 +16,8 @@ func TestInsertItem(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
-	itemReq := ItemToGinH(item)
+	item := preparationJsonItem()
+	itemReq := itemToGinH(item)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))
@@ -71,8 +71,8 @@ func TestInsertItemUniqueError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
-	itemReq := ItemToGinH(item)
+	item := preparationJsonItem()
+	itemReq := itemToGinH(item)
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -99,7 +99,7 @@ func TestInsertItemDatabaseError(t *testing.T) {
 	database.OpenNoDatabase()
 	defer database.Close()
 
-	itemReq := ItemToGinH(preparationItem())
+	itemReq := itemToGinH(preparationJsonItem())
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))

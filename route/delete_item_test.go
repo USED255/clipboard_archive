@@ -16,8 +16,8 @@ func TestDeleteItem(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
-	database.Orm.Create(&item)
+	item := preparationJsonItem()
+	database.Orm.Create(jsonItemtoItem(item))
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/api/v2/Item/%d", item.Time), nil)

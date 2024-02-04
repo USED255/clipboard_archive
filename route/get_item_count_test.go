@@ -14,7 +14,7 @@ func TestGetItemCount(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()

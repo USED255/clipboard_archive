@@ -17,7 +17,7 @@ func TestUpdateItem(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -69,7 +69,7 @@ func TestUpdateItemBindJsonError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -94,7 +94,7 @@ func TestUpdateItemNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()

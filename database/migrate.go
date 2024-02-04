@@ -81,7 +81,7 @@ func initializingDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = tx.Create(&Config{Key: "version", Value: strconv.Itoa(version)}).Error
+	err = tx.Create(&Config{Key: "version", Value: strconv.FormatUint(version, 10)}).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal(err)
@@ -92,6 +92,9 @@ func initializingDatabase() {
 func migrateVersion3To4() error {
 	log.Println("Migrating to version 4")
 	rows, err := Orm.Model(&ClipboardItem{}).Rows()
+	if err != nil {
+		return err
+	}
 	defer rows.Close()
 	tx := Orm.Begin()
 

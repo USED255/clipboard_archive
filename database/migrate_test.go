@@ -7,26 +7,23 @@ import (
 )
 
 func TestMigrateVersion(t *testing.T) {
-	var config Config
 	connectDatabase("file::memory:?cache=shared")
+	defer Close()
 
 	migrateVersion()
 
-	Orm.First(&config, "key = ?", "version")
-	assert.Equal(t, version, config.Value)
-
-	Close()
+	v, _ := getDatabaseVersion()
+	assert.Equal(t, version, v)
 }
 
 func TestMigrateVersion0Database(t *testing.T) {
-	var config Config
 	connectDatabase("file::memory:?cache=shared")
+	defer Close()
+
 	createVersion0Database()
 
 	migrateVersion()
 
-	Orm.First(&config, "key = ?", "version")
-	assert.Equal(t, version, config.Value)
-
-	Close()
+	v, _ := getDatabaseVersion()
+	assert.Equal(t, version, v)
 }

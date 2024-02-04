@@ -16,7 +16,7 @@ func TestTakeItems(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -42,7 +42,7 @@ func TestTakeItemsParamsError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -68,7 +68,7 @@ func TestTakeItemsNotFoundError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()

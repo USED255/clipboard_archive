@@ -15,7 +15,7 @@ func TestGetItems(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -53,7 +53,7 @@ func TestGetItemsStartTimestampQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -91,7 +91,7 @@ func TestGetItemsStartTimestampQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -117,7 +117,7 @@ func TestGetItemsEndTimeStampQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -155,7 +155,7 @@ func TestGetItemsEndTimeStampQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -181,9 +181,9 @@ func TestGetItemsLimitQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
-	item2 := preparationItem()
+	item2 := preparationJsonItem()
 	item2.Time = 1
 	database.Orm.Create(&item2)
 
@@ -222,7 +222,7 @@ func TestGetItemsLimitQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -248,7 +248,7 @@ func TestGetItemsAllQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItem()
+	item := preparationJsonItem()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()

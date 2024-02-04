@@ -11,7 +11,7 @@ import (
 
 var err error
 
-const version = 5
+const version uint64 = 5
 
 func getMajorVersion(version string) (uint64, error) {
 	var _majorVersion string

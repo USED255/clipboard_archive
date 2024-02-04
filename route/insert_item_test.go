@@ -20,7 +20,7 @@ func TestInsertItem(t *testing.T) {
 	itemReq := ItemToGinH(item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
@@ -35,9 +35,9 @@ func TestInsertItem(t *testing.T) {
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	item.Index = 1
+	item.Time = 1
 	var item2 Item
-	database.Orm.Where("clipboard_item_time = ?", item.ItemTime).First(&item2)
+	database.Orm.Where(&Item{Time: item.Time}).First(&item2)
 	assert.Equal(t, item, item2)
 
 	database.Close()
@@ -76,7 +76,7 @@ func TestInsertItemUniqueError(t *testing.T) {
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusConflict, w.Code)
@@ -102,7 +102,7 @@ func TestInsertItemDatabaseError(t *testing.T) {
 	itemReq := ItemToGinH(preparationItem())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)

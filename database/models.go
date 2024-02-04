@@ -15,8 +15,8 @@ type Config struct {
 }
 
 type Item struct {
-	Time      int64  `gorm:"primaryKey" json:"Time" binding:"required"` // unix milliseconds timestamp
-	Data      []byte `json:"Data"`
+	Time      int64  `gorm:"primaryKey" json:"Time"` // unix milliseconds timestamp
+	Data      []byte `json:"Data" binding:"required"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

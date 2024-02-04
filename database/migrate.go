@@ -91,18 +91,23 @@ func initializingDatabase() {
 
 func migrateVersion3To4() error {
 	log.Println("Migrating to version 4")
-	var items []ClipboardItem
-	err = Orm.Find(&items).Error
-	if err != nil {
-		return err
-	}
+	rows, err := Orm.Model(&ClipboardItem{}).Rows()
+	defer rows.Close()
 	tx := Orm.Begin()
-	err := Orm.Migrator().CreateTable(&Item{})
+
+	err = tx.Migrator().CreateTable(&Item{})
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	for _, item := range items {
+
+	for rows.Next() {
+		var item ClipboardItem
+		err = Orm.ScanRows(rows, &item)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 		data, err := base64.StdEncoding.DecodeString(item.ClipboardItemData)
 		if err != nil {
 			tx.Rollback()
@@ -117,6 +122,7 @@ func migrateVersion3To4() error {
 			return err
 		}
 	}
+
 	err = tx.Save(&Config{Key: "version", Value: "4"}).Error
 	if err != nil {
 		tx.Rollback()

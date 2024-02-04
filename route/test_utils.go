@@ -20,18 +20,14 @@ func randString(l int) string {
 	return string(b)
 }
 
-func preparationItem() Item {
-	ItemText := randString(5)
-	ItemTime := utils.GetUnixMillisTimestamp()
-	ItemData := toBase64(ItemText)
-	item := Item{
-		Time: ItemTime,
-		Data: ItemData,
+func preparationItem() jsonItem {
+	return jsonItem{
+		Time: utils.GetUnixMillisTimestamp(),
+		Data: toBase64(randString(5)),
 	}
-	return item
 }
 
-func ItemToGinH(s Item) gin.H {
+func ItemToGinH(s jsonItem) gin.H {
 	var c gin.H
 	b, _ := json.Marshal(&s)
 	_ = json.Unmarshal(b, &c)

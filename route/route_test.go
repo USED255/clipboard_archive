@@ -16,7 +16,7 @@ func TestGetPing(t *testing.T) {
 	r := SetupRouter()
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", "/api/v1/ping", nil)
+	req, _ := http.NewRequest("GET", "/api/v2/ping", nil)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	expected := gin.H{
@@ -33,7 +33,7 @@ func TestGetVersion(t *testing.T) {
 	r := SetupRouter()
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", "/api/v1/version", nil)
+	req, _ := http.NewRequest("GET", "/api/v2/version", nil)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	expected := gin.H{

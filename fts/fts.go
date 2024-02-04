@@ -1,19 +1,24 @@
 package fts
 
-func Open() error {
-	err = connect()
-	if err != nil {
-		return err
+import (
+	"os"
+
+	"github.com/blevesearch/bleve/v2"
+)
+
+var index bleve.Index
+var err error
+
+func Load(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return initIndex(path)
 	}
-	return nil
+	index, err = bleve.Open(path)
+	return err
 }
 
-func Close() error {
-	sqlDB, err := orm.DB()
-	if err != nil {
-		return err
-	}
-	sqlDB.Close()
-	orm = nil
-	return nil
+func initIndex(path string) error {
+	mapping := bleve.NewIndexMapping()
+	index, err = bleve.New(path, mapping)
+	return err
 }

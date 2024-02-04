@@ -21,12 +21,12 @@ func TestUpdateItem(t *testing.T) {
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/Item/%d", item.ItemTime), strings.NewReader(`{"ItemText": "';DROP TABLE clipboard_items;"}`))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", item.Time), strings.NewReader(`{"ItemText": "';DROP TABLE clipboard_items;"}`))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	item.ItemText = `';DROP TABLE clipboard_items;`
+	item.Text = `';DROP TABLE clipboard_items;`
 	expected := gin.H{
 		"status":  http.StatusOK,
 		"message": "Item updated successfully",

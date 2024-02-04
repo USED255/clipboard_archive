@@ -13,18 +13,17 @@ import (
 func takeItem(c *gin.Context) {
 	var item Item
 
-	_id := c.Params.ByName("id")
-	id, err := strconv.ParseInt(_id, 10, 64)
+	time, err := strconv.ParseInt(c.Params.ByName("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
-			"message": "Invalid ID",
+			"message": "Invalid ItemTime",
 			"error":   err.Error(),
 		})
 		return
 	}
 
-	err = database.Orm.Where("clipboard_item_time = ?", id).First(&item).Error
+	err = database.Orm.Where(&Item{Time: time}).First(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{

@@ -6,34 +6,52 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/used255/clipboard_archive/v5/database"
-	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func getItem(c *gin.Context) {
-	var startTimestamp int64
-	var endTimestamp int64
-	var limit int
-	var count int64
+	var times []int64
+
+	limit := 10
+	request := gin.H{}
 
 	_startTimestamp := c.Query("startTimestamp")
 	_endTimestamp := c.Query("endTimestamp")
 	_limit := c.Query("limit")
-	search := c.Query("search")
 
-	requestedForm := gin.H{
-		"startTimestamp": _startTimestamp,
-		"endTimestamp":   _endTimestamp,
-		"limit":          _limit,
-		"search":         search,
+	tx := database.Orm.Begin()
+
+	tx.Order("time desc")
+
+	if _startTimestamp != "" {
+		request["startTimestamp"] = _startTimestamp
+		startTime, err := strconv.ParseInt(_startTimestamp, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid startTime",
+				"error":   err.Error(),
+			})
+			return
+		}
+		tx.Where("time >= ?", startTime)
 	}
 
-	items := []Item{}
+	if _endTimestamp != "" {
+		request["endTimestamp"] = _endTimestamp
+		endTime, err := strconv.ParseInt(_endTimestamp, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid endTime",
+				"error":   err.Error(),
+			})
+			return
+		}
+		tx.Where("time <= ?", endTime)
+	}
 
-	functionStartTime := utils.GetUnixMillisTimestamp()
-
-	if _limit == "" {
-		limit = 100
-	} else {
+	if _limit != "" {
+		request["limit"] = _limit
 		limit, err = strconv.Atoi(_limit)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -44,65 +62,9 @@ func getItem(c *gin.Context) {
 			return
 		}
 	}
+	tx.Limit(limit)
 
-	tx := database.Orm.Order("clipboard_item_time desc")
-
-	if _startTimestamp != "" {
-		startTimestamp, err = strconv.ParseInt(_startTimestamp, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"status":  http.StatusBadRequest,
-				"message": "Invalid startTimestamp",
-				"error":   err.Error(),
-			})
-			return
-		}
-		tx.Where("clipboard_item_time >= ?", startTimestamp)
-	}
-
-	if _endTimestamp != "" {
-		endTimestamp, err = strconv.ParseInt(_endTimestamp, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"status":  http.StatusBadRequest,
-				"message": "Invalid endTimestamp",
-				"error":   err.Error(),
-			})
-			return
-		}
-		tx.Where("clipboard_item_time <= ?", endTimestamp)
-	}
-
-	if search != "" {
-		//log.Println("Searching for: " + search)
-		//tx.Debug()
-		tx.
-			Table("clipboard_items_fts").
-			Where("clipboard_items_fts MATCH ?", search).
-			Joins("NATURAL JOIN clipboard_items").
-			Count(&count)
-		if tx.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":  http.StatusInternalServerError,
-				"message": "Error getting Item",
-				"error":   tx.Error.Error(),
-			})
-			return
-		}
-		tx.Limit(limit).Scan(&items)
-	} else {
-		tx.Model(&items).Count(&count)
-		if tx.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":  http.StatusInternalServerError,
-				"message": "Error getting Item",
-				"error":   tx.Error.Error(),
-			})
-			return
-		}
-		tx.Limit(limit).Find(&items)
-	}
-
+	tx.Pluck("time", &times)
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
@@ -112,15 +74,10 @@ func getItem(c *gin.Context) {
 		return
 	}
 
-	functionEndTime := utils.GetUnixMillisTimestamp()
-
 	c.JSON(http.StatusOK, gin.H{
-		"status":              http.StatusOK,
-		"requested_form":      requestedForm,
-		"count":               count,
-		"function_start_time": functionStartTime,
-		"function_end_time":   functionEndTime,
-		"message":             "Item found successfully",
-		"Item":                items,
+		"status":         http.StatusOK,
+		"requested_form": request,
+		"message":        "Item found successfully",
+		"Items":          times,
 	})
 }

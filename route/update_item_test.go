@@ -26,7 +26,6 @@ func TestUpdateItem(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	item.Text = `';DROP TABLE clipboard_items;`
 	expected := gin.H{
 		"status":  http.StatusOK,
 		"message": "Item updated successfully",
@@ -74,7 +73,7 @@ func TestUpdateItemBindJsonError(t *testing.T) {
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/Item/%d", item.ItemTime), strings.NewReader(`a`))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v1/Item/%d", item.Time), strings.NewReader(`a`))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)

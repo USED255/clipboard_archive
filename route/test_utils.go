@@ -8,7 +8,6 @@ import (
 	"math/rand"
 
 	"github.com/gin-gonic/gin"
-	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func randString(l int) string {
@@ -22,7 +21,7 @@ func randString(l int) string {
 
 func preparationItem() jsonItem {
 	return jsonItem{
-		Time: utils.GetUnixMillisTimestamp(),
+		Time: GetUnixMillisTimestamp(),
 		Data: toBase64(randString(5)),
 	}
 }

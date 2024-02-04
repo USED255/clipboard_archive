@@ -39,7 +39,7 @@ func TestGetVersion(t *testing.T) {
 	expected := gin.H{
 		"status":  http.StatusOK,
 		"version": database.Version,
-		"message": fmt.Sprintf("version %s", database.Version),
+		"message": fmt.Sprintf("version %d", database.Version),
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())

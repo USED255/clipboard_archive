@@ -1,7 +1,6 @@
 package route
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,7 +24,7 @@ func TestGetItems(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []Item{}
+	items := []jsonItem{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "",
@@ -63,7 +62,7 @@ func TestGetItemsStartTimestampQuery(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []Item{}
+	items := []jsonItem{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "1",
@@ -127,7 +126,7 @@ func TestGetItemsEndTimeStampQuery(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []Item{}
+	items := []jsonItem{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "",
@@ -185,7 +184,7 @@ func TestGetItemsLimitQuery(t *testing.T) {
 	item := preparationItem()
 	database.Orm.Create(&item)
 	item2 := preparationItem()
-	item2.ItemTime = 1
+	item2.Time = 1
 	database.Orm.Create(&item2)
 
 	w := httptest.NewRecorder()
@@ -194,7 +193,7 @@ func TestGetItemsLimitQuery(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []Item{}
+	items := []jsonItem{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "",
@@ -244,44 +243,6 @@ func TestGetItemsLimitQueryError(t *testing.T) {
 	database.Close()
 }
 
-func TestGetItemsSearchQuery(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
-	r := SetupRouter()
-
-	item := preparationItem()
-	database.Orm.Create(&item)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/Item?search=%s", item.ItemText), nil)
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	items := []Item{}
-	items = append(items, item)
-	requestedForm := gin.H{
-		"startTimestamp": "",
-		"endTimestamp":   "",
-		"limit":          "",
-		"search":         item.ItemText,
-	}
-	expected := gin.H{
-		"status":         http.StatusOK,
-		"requested_form": requestedForm,
-		"count":          1,
-		"message":        "Item found successfully",
-		"Item":           items,
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
-	delete(got, "function_start_time")
-	delete(got, "function_end_time")
-	assert.Equal(t, expected, got)
-
-	database.Close()
-}
-
 func TestGetItemsAllQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
@@ -291,18 +252,17 @@ func TestGetItemsAllQuery(t *testing.T) {
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/Item?startTimestamp=1&endTimestamp=1844674407370955161&limit=1&search=%s", item.ItemText), nil)
+	req, _ := http.NewRequest("GET", "/api/v1/Item?startTimestamp=1&endTimestamp=1844674407370955161&limit=1", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []Item{}
+	items := []jsonItem{}
 	items = append(items, item)
 	requestedForm := gin.H{
 		"startTimestamp": "1",
 		"endTimestamp":   "1844674407370955161",
 		"limit":          "1",
-		"search":         item.ItemText,
 	}
 	expected := gin.H{
 		"status":         http.StatusOK,

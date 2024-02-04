@@ -27,7 +27,7 @@ func SetupRouter() *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  http.StatusOK,
 			"version": database.Version,
-			"message": fmt.Sprintf("version %s", database.Version),
+			"message": fmt.Sprintf("version %d", database.Version),
 		})
 	})
 	api.POST("/Item", insertItem)

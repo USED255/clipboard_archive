@@ -18,7 +18,7 @@ func getItem(c *gin.Context) {
 	_endTimestamp := c.Query("endTimestamp")
 	_limit := c.Query("limit")
 
-	tx := database.Orm.Begin()
+	tx := database.Orm.Model(&Item{})
 
 	tx.Order("time desc")
 
@@ -68,7 +68,7 @@ func getItem(c *gin.Context) {
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
-			"message": "Error getting Item",
+			"message": "Error getting Items",
 			"error":   tx.Error.Error(),
 		})
 		return
@@ -77,7 +77,7 @@ func getItem(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":         http.StatusOK,
 		"requested_form": request,
-		"message":        "Item found successfully",
+		"message":        "Items found successfully",
 		"Items":          times,
 	})
 }

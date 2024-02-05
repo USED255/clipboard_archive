@@ -25,12 +25,10 @@ func preparationJsonItem() jsonItem {
 		Data: toBase64(randString(5)),
 	}
 }
-
-func jsonItemtoItem(j jsonItem) Item {
-	data, _ := base64.StdEncoding.DecodeString(j.Data)
-	return Item{
-		Time: j.Time,
-		Data: data,
+func preparationItemReflect() *Item {
+	return &Item{
+		Time: GetUnixMillisTimestamp(),
+		Data: []byte(randString(5)),
 	}
 }
 

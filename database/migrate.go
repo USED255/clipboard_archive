@@ -7,15 +7,15 @@ import (
 	"strconv"
 )
 
-func getDatabaseVersion() (uint64, error) {
+func getDatabaseVersion() (int64, error) {
 	var config Config
-	var databaseVersion uint64
+	var databaseVersion int64
 
 	Orm.First(&config, "key = ?", "version")
 	if config.Key == "" {
 		return 0, nil
 	}
-	databaseVersion, _ = strconv.ParseUint(config.Value, 10, 64)
+	databaseVersion, _ = strconv.ParseInt(config.Value, 10, 64)
 	if databaseVersion != 0 {
 		return databaseVersion, nil
 	}
@@ -27,7 +27,7 @@ func getDatabaseVersion() (uint64, error) {
 }
 
 func migrateVersion() error {
-	var databaseVersion uint64
+	var databaseVersion int64
 
 	if !Orm.Migrator().HasTable(&Config{}) {
 		initializingDatabase()
@@ -81,7 +81,7 @@ func initializingDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = tx.Create(&Config{Key: "version", Value: strconv.FormatUint(version, 10)}).Error
+	err = tx.Create(&Config{Key: "version", Value: strconv.FormatInt(version, 10)}).Error
 	if err != nil {
 		tx.Rollback()
 		log.Fatal(err)

@@ -11,8 +11,6 @@ import (
 )
 
 func deleteItem(c *gin.Context) {
-	var item Item
-
 	time, err := strconv.ParseInt(c.Params.ByName("time"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -23,24 +21,7 @@ func deleteItem(c *gin.Context) {
 		return
 	}
 
-	err = database.Orm.Where(&Item{Time: time}).First(&item).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  http.StatusNotFound,
-				"message": "Item not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  http.StatusInternalServerError,
-			"message": "Error deleting Item",
-			"error":   err.Error(),
-		})
-		return
-	}
-
-	err = database.Orm.Delete(&item, item.Time).Error
+	err = database.Orm.Delete(&Item{Time: time}).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{

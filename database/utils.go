@@ -7,13 +7,14 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+	//"gorm.io/gorm/logger"
 )
 
 var err error
 
-const version uint64 = 5
+const version int64 = 5
 
-func getMajorVersion(version string) (uint64, error) {
+func getMajorVersion(version string) (int64, error) {
 	var _majorVersion string
 
 	re := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
@@ -28,13 +29,14 @@ func getMajorVersion(version string) (uint64, error) {
 		return 0, err
 	}
 
-	return majorVersion, nil
+	return int64(majorVersion), nil
 }
 
 func connectDatabase(dns string) error {
 	if Orm != nil {
 		return errors.New("database already connected")
 	}
+	//Orm, err = gorm.Open(sqlite.Open(dns), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
 	Orm, err = gorm.Open(sqlite.Open(dns), &gorm.Config{})
 	if err != nil {
 		return err

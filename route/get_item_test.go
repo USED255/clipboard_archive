@@ -12,40 +12,32 @@ import (
 
 func TestGetItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationJsonItem()
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
+	item := preparationItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/Item", nil)
+	req, _ := http.NewRequest("GET", "/api/v2/Item", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	items := []jsonItem{}
-	items = append(items, item)
-	requestedForm := gin.H{
-		"startTimestamp": "",
-		"endTimestamp":   "",
-		"limit":          "",
-		"search":         "",
-	}
+	items := []int64{item.Time}
+	requestedForm := gin.H{}
 	expected := gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
-		"count":          1,
-		"message":        "Item found successfully",
-		"Item":           items,
+		"message":        "Items found successfully",
+		"Items":          items,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
-	delete(got, "function_start_time")
-	delete(got, "function_end_time")
-	assert.Equal(t, expected, got)
 
-	database.Close()
+	assert.Equal(t, expected, got)
 }
 
 func TestGetItemsStartTimestampQuery(t *testing.T) {

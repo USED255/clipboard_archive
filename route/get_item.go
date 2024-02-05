@@ -14,17 +14,17 @@ func getItem(c *gin.Context) {
 	limit := 10
 	request := gin.H{}
 
-	_startTimestamp := c.Query("startTimestamp")
-	_endTimestamp := c.Query("endTimestamp")
+	_startTime := c.Query("startTime")
+	_endTime := c.Query("endTime")
 	_limit := c.Query("limit")
 
 	tx := database.Orm.Model(&Item{})
 
 	tx.Order("time desc")
 
-	if _startTimestamp != "" {
-		request["startTimestamp"] = _startTimestamp
-		startTime, err := strconv.ParseInt(_startTimestamp, 10, 64)
+	if _startTime != "" {
+		request["startTime"] = _startTime
+		startTime, err := strconv.ParseInt(_startTime, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
@@ -36,9 +36,9 @@ func getItem(c *gin.Context) {
 		tx.Where("time >= ?", startTime)
 	}
 
-	if _endTimestamp != "" {
-		request["endTimestamp"] = _endTimestamp
-		endTime, err := strconv.ParseInt(_endTimestamp, 10, 64)
+	if _endTime != "" {
+		request["endTime"] = _endTime
+		endTime, err := strconv.ParseInt(_endTime, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,

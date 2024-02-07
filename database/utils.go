@@ -7,7 +7,6 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var err error
@@ -36,8 +35,10 @@ func connectDatabase(dns string) error {
 	if Orm != nil {
 		return errors.New("database already connected")
 	}
-	Orm, err = gorm.Open(sqlite.Open(dns), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
-	//Orm, err = gorm.Open(sqlite.Open(dns), &gorm.Config{})
+	if OrmConfig == nil {
+		OrmConfig = &gorm.Config{}
+	}
+	Orm, err = gorm.Open(sqlite.Open(dns), OrmConfig)
 	if err != nil {
 		return err
 	}

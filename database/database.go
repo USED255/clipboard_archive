@@ -6,6 +6,7 @@ import (
 
 const Version = version
 
+var OrmConfig *gorm.Config
 var Orm *gorm.DB
 
 func Open(dns string) error {

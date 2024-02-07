@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func upsertItem(c *gin.Context) {
@@ -21,6 +22,7 @@ func upsertItem(c *gin.Context) {
 			"message": "Invalid ItemTime",
 			"error":   err.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 	err = c.BindJSON(&jsonItem)
@@ -30,6 +32,7 @@ func upsertItem(c *gin.Context) {
 			"message": "Invalid JSON",
 			"error":   err.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 	data, err := base64.StdEncoding.DecodeString(jsonItem.Data)
@@ -39,6 +42,7 @@ func upsertItem(c *gin.Context) {
 			"message": "Invalid Data",
 			"error":   err.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 
@@ -58,6 +62,7 @@ func upsertItem(c *gin.Context) {
 					"message": "Error upserting Item",
 					"error":   tx.Error.Error(),
 				})
+				utils.DebugLog.Println(err)
 				return
 			}
 		}
@@ -66,6 +71,7 @@ func upsertItem(c *gin.Context) {
 			"message": "Error upserting Item",
 			"error":   tx.Error.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 

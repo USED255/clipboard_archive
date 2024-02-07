@@ -5,10 +5,7 @@ type Config struct {
 	Value string
 }
 
-type ClipboardItem struct {
-	Index             int64  `gorm:"primaryKey"`
-	ClipboardItemTime int64  `json:"ClipboardItemTime" binding:"required"` // unix milliseconds timestamp
-	ClipboardItemText string `json:"ClipboardItemText"`
-	ClipboardItemHash string `gorm:"unique" json:"ClipboardItemHash"`
-	ClipboardItemData string `json:"ClipboardItemData"`
+type Item struct {
+	Time int64  `gorm:"primaryKey" json:"Time"` // unix milliseconds timestamp
+	Data []byte `json:"Data" binding:"required"`
 }

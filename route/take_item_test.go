@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,49 +12,51 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func TestTakeClipboardItems(t *testing.T) {
+func TestTakeItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	database.Orm.Create(&item)
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
+	item := preparationJsonItem()
+	data, _ := base64.StdEncoding.DecodeString(item.Data)
+	database.Orm.Create(&Item{
+		Time: item.Time,
+		Data: data,
+	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/ClipboardItem/%d", item.ClipboardItemTime), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v2/Item/%d", item.Time), nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	expected := gin.H{
-		"status":        http.StatusOK,
-		"message":       "ClipboardItem taken successfully",
-		"ClipboardItem": item,
+		"status":  http.StatusOK,
+		"message": "Item taken successfully",
+		"Item":    item,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
 
-	database.Close()
+	assert.Equal(t, expected, got)
 }
 
-func TestTakeClipboardItemsParamsError(t *testing.T) {
+func TestTakeItemsParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	database.Orm.Create(&item)
-
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/a", nil)
+	req, _ := http.NewRequest("GET", "/api/v2/Item/a", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusBadRequest,
-		"message": "Invalid ID",
+		"message": "Invalid ItemTime",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
@@ -63,32 +66,37 @@ func TestTakeClipboardItemsParamsError(t *testing.T) {
 	database.Close()
 }
 
-func TestTakeClipboardItemsNotFoundError(t *testing.T) {
+func TestTakeItemsNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationClipboardItem()
-	database.Orm.Create(&item)
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
+	item := preparationJsonItem()
+	data, _ := base64.StdEncoding.DecodeString(item.Data)
+	database.Orm.Create(&Item{
+		Time: item.Time,
+		Data: data,
+	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
+	req, _ := http.NewRequest("GET", "/api/v2/Item/1", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusNotFound,
-		"message": "ClipboardItem not found",
+		"message": "Item not found",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
 
-	database.Close()
+	assert.Equal(t, expected, got)
 }
 
-func TestTakeClipboardItemsDatabaseError(t *testing.T) {
+func TestTakeItemsDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -96,17 +104,18 @@ func TestTakeClipboardItemsDatabaseError(t *testing.T) {
 	defer database.Close()
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/ClipboardItem/1", nil)
+	req, _ := http.NewRequest("GET", "/api/v2/Item/1", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusInternalServerError,
-		"message": "Error taking ClipboardItem",
+		"message": "Error taking Item",
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	delete(got, "error")
+
 	assert.Equal(t, expected, got)
 }

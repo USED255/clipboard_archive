@@ -1,6 +1,6 @@
 package database
 
-const CreateClipboardItemsTableQuery = `
+const CreateItemsTableQuery = `
 CREATE TABLE "clipboard_items" (
 	"id" integer,
 	"created_at" datetime,

@@ -35,10 +35,10 @@ func TestRandString(t *testing.T) {
 	assert.NotEqual(t, a, b)
 }
 
-func TestClipboardItemToGinH(t *testing.T) {
-	clipboardItemToGinH(preparationClipboardItem())
+func TestItemToGinH(t *testing.T) {
+	itemToGinH(preparationJsonItem())
 }
 
-func TestPreparationClipboardItem(t *testing.T) {
-	preparationClipboardItem()
+func TestPreparationItem(t *testing.T) {
+	preparationJsonItem()
 }

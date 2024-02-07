@@ -8,7 +8,6 @@ import (
 	"math/rand"
 
 	"github.com/gin-gonic/gin"
-	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func randString(l int) string {
@@ -20,21 +19,20 @@ func randString(l int) string {
 	return string(b)
 }
 
-func preparationClipboardItem() ClipboardItem {
-	ClipboardItemText := randString(5)
-	ClipboardItemTime := utils.GetUnixMillisTimestamp()
-	ClipboardItemData := toBase64(ClipboardItemText)
-	ClipboardItemHash := toSha256(ClipboardItemData)
-	item := ClipboardItem{
-		ClipboardItemText: ClipboardItemText,
-		ClipboardItemTime: ClipboardItemTime,
-		ClipboardItemData: ClipboardItemData,
-		ClipboardItemHash: ClipboardItemHash,
+func preparationJsonItem() jsonItem {
+	return jsonItem{
+		Time: GetUnixMillisTimestamp(),
+		Data: toBase64(randString(5)),
 	}
-	return item
+}
+func preparationItemReflect() *Item {
+	return &Item{
+		Time: GetUnixMillisTimestamp(),
+		Data: []byte(randString(5)),
+	}
 }
 
-func clipboardItemToGinH(s ClipboardItem) gin.H {
+func itemToGinH(s jsonItem) gin.H {
 	var c gin.H
 	b, _ := json.Marshal(&s)
 	_ = json.Unmarshal(b, &c)

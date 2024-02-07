@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/base64"
 	"errors"
 	"net/http"
 	"strconv"
@@ -10,40 +11,42 @@ import (
 	"gorm.io/gorm"
 )
 
-func takeClipboardItem(c *gin.Context) {
-	var item ClipboardItem
+func takeItem(c *gin.Context) {
+	var item Item
 
-	_id := c.Params.ByName("id")
-	id, err := strconv.ParseInt(_id, 10, 64)
+	time, err := strconv.ParseInt(c.Params.ByName("time"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
-			"message": "Invalid ID",
+			"message": "Invalid ItemTime",
 			"error":   err.Error(),
 		})
 		return
 	}
 
-	err = database.Orm.Where("clipboard_item_time = ?", id).First(&item).Error
+	err = database.Orm.First(&item, time).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  http.StatusNotFound,
-				"message": "ClipboardItem not found",
+				"message": "Item not found",
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
-			"message": "Error taking ClipboardItem",
+			"message": "Error taking Item",
 			"error":   err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":        http.StatusOK,
-		"message":       "ClipboardItem taken successfully",
-		"ClipboardItem": item,
+		"status":  http.StatusOK,
+		"message": "Item taken successfully",
+		"Item": jsonItem{
+			Time: item.Time,
+			Data: base64.StdEncoding.EncodeToString([]byte(item.Data)),
+		},
 	})
 }

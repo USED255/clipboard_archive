@@ -1,26 +1,34 @@
 package database
 
 import (
-	"log"
-
 	"gorm.io/gorm"
 )
 
 const Version = version
 
 var Orm *gorm.DB
-var err error
 
-func Open(dns string) {
-	connectDatabase(dns)
-	migrateVersion()
+func Open(dns string) error {
+	err = connectDatabase(dns)
+	if err != nil {
+		return err
+	}
+	err = migrateVersion()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func Close() {
+func Close() error {
 	sqlDB, err := Orm.DB()
 	if err != nil {
-		log.Fatalf("Failed to get database handle: %s", err)
+		return err
 	}
-	sqlDB.Close()
+	err = sqlDB.Close()
+	if err != nil {
+		return err
+	}
 	Orm = nil
+	return nil
 }

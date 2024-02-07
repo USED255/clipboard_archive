@@ -10,13 +10,13 @@ import (
 
 var err error
 
-type ClipboardItem database.ClipboardItem
+type Item database.Item
 
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"}) // Private network
 
-	api := r.Group("/api/v1")
+	api := r.Group("/api/v2")
 	api.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  http.StatusOK,
@@ -27,15 +27,15 @@ func SetupRouter() *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  http.StatusOK,
 			"version": database.Version,
-			"message": fmt.Sprintf("version %s", database.Version),
+			"message": fmt.Sprintf("version %d", database.Version),
 		})
 	})
-	api.POST("/ClipboardItem", insertClipboardItem)
-	api.DELETE("/ClipboardItem/:id", deleteClipboardItem)
-	api.GET("/ClipboardItem", getClipboardItem)
-	api.GET("/ClipboardItem/:id", takeClipboardItem)
-	api.PUT("/ClipboardItem/:id", updateClipboardItem)
-	api.GET("/ClipboardItem/count", getClipboardItemCount)
+	api.GET("/Item", getItem)
+	api.GET("/Item/:time", takeItem)
+	api.GET("/Item/count", getItemCount)
+	api.GET("/Item/search", searchItem)
+	api.PUT("/Item/:time", upsertItem)
+	api.DELETE("/Item/:time", deleteItem)
 
 	return r
 }

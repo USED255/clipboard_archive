@@ -40,7 +40,12 @@ func Start() {
 	}
 
 	log.Println("Welcome 🐱‍🏍")
-	database.Open("clipboard_archive.db")
+
+	err = database.Open("clipboard_archive.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	go func() {
 		err = route.SetupRouter().Run(*bindFlagPtr)
 		if err != nil {

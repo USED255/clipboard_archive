@@ -7,30 +7,22 @@ import (
 	"strconv"
 )
 
-func getDatabaseVersion() (int64, error) {
-	var config Config
-	var databaseVersion int64
-
-	Orm.First(&config, "key = ?", "version")
-	if config.Key == "" {
-		return 0, nil
-	}
-	databaseVersion, _ = strconv.ParseInt(config.Value, 10, 64)
-	if databaseVersion != 0 {
-		return databaseVersion, nil
-	}
-	databaseVersion, _ = getMajorVersion(config.Value)
-	if databaseVersion != 0 {
-		return databaseVersion, nil
-	}
-	return 0, errors.New("invalid version")
+type ClipboardItem struct {
+	Index             int64  `gorm:"primaryKey"`
+	ClipboardItemTime int64  `json:"ItemTime" binding:"required"` // unix milliseconds timestamp
+	ClipboardItemText string `json:"ItemText"`
+	ClipboardItemHash string `gorm:"unique" json:"ItemHash"`
+	ClipboardItemData string `json:"ItemData"`
 }
 
 func migrateVersion() error {
 	var databaseVersion int64
 
 	if !Orm.Migrator().HasTable(&Config{}) {
-		initializingDatabase()
+		err = initializingDatabase()
+		if err != nil {
+			return err
+		}
 	}
 
 	for {
@@ -72,32 +64,34 @@ func migrateVersion() error {
 	}
 }
 
-func initializingDatabase() {
+func initializingDatabase() error {
 	log.Println("No data in database, initializing")
 
 	tx := Orm.Begin()
-
 	err = tx.AutoMigrate(&Item{}, &Config{})
 	if err != nil {
-		log.Fatal(err)
+		tx.Rollback()
+		return err
 	}
 	err = tx.Create(&Config{Key: "version", Value: strconv.FormatInt(version, 10)}).Error
 	if err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		return err
 	}
 	tx.Commit()
+	return nil
 }
 
 func migrateVersion3To4() error {
 	log.Println("Migrating to version 4")
+
 	rows, err := Orm.Model(&ClipboardItem{}).Rows()
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
-	tx := Orm.Begin()
 
+	tx := Orm.Begin()
 	err = tx.Migrator().CreateTable(&Item{})
 	if err != nil {
 		tx.Rollback()
@@ -131,12 +125,14 @@ func migrateVersion3To4() error {
 		tx.Rollback()
 		return err
 	}
+
 	tx.Commit()
 	return nil
 }
 
 func migrateVersion2To3() error {
 	tx := Orm.Begin()
+
 	err = tx.Migrator().DropColumn(&ClipboardItem{}, "index")
 	if err != nil {
 		tx.Rollback()
@@ -175,6 +171,7 @@ func migrateVersion1To2() error {
 		tx.Rollback()
 		return err
 	}
+
 	tx.Commit()
 	return nil
 }
@@ -187,6 +184,7 @@ func migrateVersion0To1() error {
 		tx.Rollback()
 		return err
 	}
+
 	tx.Commit()
 	return nil
 }

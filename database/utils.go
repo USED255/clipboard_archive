@@ -13,6 +13,38 @@ var err error
 
 const version int64 = 5
 
+func connectDatabase(dns string) error {
+	if Orm != nil {
+		return errors.New("database already connected")
+	}
+	if OrmConfig == nil {
+		OrmConfig = &gorm.Config{}
+	}
+	Orm, err = gorm.Open(sqlite.Open(dns), OrmConfig)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func getDatabaseVersion() (int64, error) {
+	var config Config
+	var databaseVersion int64
+
+	Orm.First(&config, "key = ?", "version")
+	if config.Key == "" {
+		return 0, nil
+	}
+	databaseVersion, _ = strconv.ParseInt(config.Value, 10, 64)
+	if databaseVersion != 0 {
+		return databaseVersion, nil
+	}
+	databaseVersion, _ = getMajorVersion(config.Value)
+	if databaseVersion != 0 {
+		return databaseVersion, nil
+	}
+	return 0, errors.New("invalid version")
+}
+
 func getMajorVersion(version string) (int64, error) {
 	var _majorVersion string
 
@@ -29,26 +61,4 @@ func getMajorVersion(version string) (int64, error) {
 	}
 
 	return int64(majorVersion), nil
-}
-
-func connectDatabase(dns string) error {
-	if Orm != nil {
-		return errors.New("database already connected")
-	}
-	if OrmConfig == nil {
-		OrmConfig = &gorm.Config{}
-	}
-	Orm, err = gorm.Open(sqlite.Open(dns), OrmConfig)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type ClipboardItem struct {
-	Index             int64  `gorm:"primaryKey"`
-	ClipboardItemTime int64  `json:"ItemTime" binding:"required"` // unix milliseconds timestamp
-	ClipboardItemText string `json:"ItemText"`
-	ClipboardItemHash string `gorm:"unique" json:"ItemHash"`
-	ClipboardItemData string `json:"ItemData"`
 }

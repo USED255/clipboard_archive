@@ -6,6 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestConnectDatabase(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+
+	assert.NotNil(t, Orm)
+
+	Close()
+}
+
 func TestGetMajorVersion(t *testing.T) {
 	v, err := getMajorVersion("1.2.3")
 	assert.NoError(t, err)

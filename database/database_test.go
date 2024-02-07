@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConnectDatabase(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+func TestOpenDatabase(t *testing.T) {
+	Open("file::memory:?cache=shared")
 
 	assert.NotNil(t, Orm)
 

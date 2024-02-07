@@ -21,6 +21,7 @@ func TestMigrateVersion0Database(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
 	}
+
 	connectDatabase("file::memory:?cache=shared")
 	defer Close()
 

@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/base64"
 	"errors"
 	"net/http"
 	"strconv"
@@ -13,7 +14,7 @@ import (
 func takeItem(c *gin.Context) {
 	var item Item
 
-	time, err := strconv.ParseInt(c.Params.ByName("id"), 10, 64)
+	time, err := strconv.ParseInt(c.Params.ByName("time"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
@@ -23,7 +24,7 @@ func takeItem(c *gin.Context) {
 		return
 	}
 
-	err = database.Orm.Where(&Item{Time: time}).First(&item).Error
+	err = database.Orm.First(&item, time).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -43,6 +44,9 @@ func takeItem(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  http.StatusOK,
 		"message": "Item taken successfully",
-		"Item":    item,
+		"Item": jsonItem{
+			Time: item.Time,
+			Data: base64.StdEncoding.EncodeToString([]byte(item.Data)),
+		},
 	})
 }

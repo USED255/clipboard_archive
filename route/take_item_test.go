@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -13,11 +14,17 @@ import (
 
 func TestTakeItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
 	item := preparationJsonItem()
-	database.Orm.Create(&item)
+	data, _ := base64.StdEncoding.DecodeString(item.Data)
+	database.Orm.Create(&Item{
+		Time: item.Time,
+		Data: data,
+	})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v2/Item/%d", item.Time), nil)
@@ -32,18 +39,14 @@ func TestTakeItems(t *testing.T) {
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
 
-	database.Close()
+	assert.Equal(t, expected, got)
 }
 
 func TestTakeItemsParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
-
-	item := preparationJsonItem()
-	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v2/Item/a", nil)
@@ -65,11 +68,17 @@ func TestTakeItemsParamsError(t *testing.T) {
 
 func TestTakeItemsNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
 	item := preparationJsonItem()
-	database.Orm.Create(&item)
+	data, _ := base64.StdEncoding.DecodeString(item.Data)
+	database.Orm.Create(&Item{
+		Time: item.Time,
+		Data: data,
+	})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v2/Item/1", nil)
@@ -83,9 +92,8 @@ func TestTakeItemsNotFoundError(t *testing.T) {
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
 
-	database.Close()
+	assert.Equal(t, expected, got)
 }
 
 func TestTakeItemsDatabaseError(t *testing.T) {
@@ -108,5 +116,6 @@ func TestTakeItemsDatabaseError(t *testing.T) {
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	delete(got, "error")
+
 	assert.Equal(t, expected, got)
 }

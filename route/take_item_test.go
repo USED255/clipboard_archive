@@ -19,7 +19,7 @@ func TestTakeItems(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationJsonItem()
+	item := newJsonItem()
 	data, _ := base64.StdEncoding.DecodeString(item.Data)
 	database.Orm.Create(&Item{
 		Time: item.Time,
@@ -37,8 +37,8 @@ func TestTakeItems(t *testing.T) {
 		"message": "Item taken successfully",
 		"Item":    item,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
 }
@@ -58,8 +58,8 @@ func TestTakeItemsParamsError(t *testing.T) {
 		"status":  http.StatusBadRequest,
 		"message": "Invalid ItemTime",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 
@@ -73,7 +73,7 @@ func TestTakeItemsNotFoundError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationJsonItem()
+	item := newJsonItem()
 	data, _ := base64.StdEncoding.DecodeString(item.Data)
 	database.Orm.Create(&Item{
 		Time: item.Time,
@@ -90,8 +90,8 @@ func TestTakeItemsNotFoundError(t *testing.T) {
 		"status":  http.StatusNotFound,
 		"message": "Item not found",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
 }
@@ -113,8 +113,8 @@ func TestTakeItemsDatabaseError(t *testing.T) {
 		"status":  http.StatusInternalServerError,
 		"message": "Error taking Item",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
 	assert.Equal(t, expected, got)

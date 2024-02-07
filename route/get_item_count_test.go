@@ -14,7 +14,7 @@ func TestGetItemCount(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -28,9 +28,32 @@ func TestGetItemCount(t *testing.T) {
 		"message": "1 items in clipboard",
 		"count":   1,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	assert.Equal(t, expected, got)
 
 	database.Close()
+}
+func TestGetItemCountDatabaseError(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := SetupRouter()
+
+	database.OpenNoDatabase()
+	defer database.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v2/Item/count", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	expected := gin.H{
+		"status":  http.StatusInternalServerError,
+		"message": "Error getting item count",
+	}
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
+	delete(got, "error")
+
+	assert.Equal(t, expected, got)
 }

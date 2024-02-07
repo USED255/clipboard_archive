@@ -9,21 +9,14 @@ import (
 )
 
 func TestDumpJSON(t *testing.T) {
-	assert.Equal(t, "{}", dumpJSON(gin.H{}))
+	assert.Equal(t, "{}", ginHToJson(gin.H{}))
 }
 func TestLoadJSON(t *testing.T) {
-	assert.Equal(t, gin.H{}, loadJSON("{}"))
+	assert.Equal(t, gin.H{}, stringToJson("{}"))
 }
 
 func TestReloadJSON(t *testing.T) {
-	assert.Equal(t, gin.H{}, reloadJSON(gin.H{}))
-}
-
-func TestToSha256(t *testing.T) {
-	s := "The quick brown fox jumps over the lazy dog"
-	b := toSha256(s)
-
-	assert.NotEmpty(t, b)
+	assert.Equal(t, gin.H{}, ginHToGinH(gin.H{}))
 }
 
 func TestRandString(t *testing.T) {
@@ -36,9 +29,13 @@ func TestRandString(t *testing.T) {
 }
 
 func TestItemToGinH(t *testing.T) {
-	itemToGinH(preparationJsonItem())
+	jsonItemToGinH(newJsonItem())
 }
 
 func TestPreparationItem(t *testing.T) {
-	preparationJsonItem()
+	newJsonItem()
+}
+func TestGetUnixMillisTimestamp(t *testing.T) {
+	ts := getUnixMillisTimestamp()
+	assert.True(t, ts > 0)
 }

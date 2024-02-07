@@ -16,7 +16,7 @@ func TestDeleteItem(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(item)
 
 	w := httptest.NewRecorder()
@@ -30,8 +30,8 @@ func TestDeleteItem(t *testing.T) {
 		"message":  "Item deleted successfully",
 		"ItemTime": item.Time,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	assert.Equal(t, expected, got)
 
 	err := database.Orm.Where(&Item{Time: item.Time}).First(&item).Error
@@ -55,8 +55,8 @@ func TestDeleteItemParamsError(t *testing.T) {
 		"status":  http.StatusBadRequest,
 		"message": "Invalid ItemTime",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 	assert.Equal(t, expected, got)
 

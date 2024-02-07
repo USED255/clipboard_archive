@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func getItem(c *gin.Context) {
@@ -31,6 +32,7 @@ func getItem(c *gin.Context) {
 				"message": "Invalid startTime",
 				"error":   err.Error(),
 			})
+			utils.DebugLog.Println(err)
 			return
 		}
 		tx.Where("time >= ?", startTime)
@@ -45,6 +47,7 @@ func getItem(c *gin.Context) {
 				"message": "Invalid endTime",
 				"error":   err.Error(),
 			})
+			utils.DebugLog.Println(err)
 			return
 		}
 		tx.Where("time <= ?", endTime)
@@ -59,6 +62,7 @@ func getItem(c *gin.Context) {
 				"message": "Invalid limit",
 				"error":   err.Error(),
 			})
+			utils.DebugLog.Println(err)
 			return
 		}
 	}
@@ -71,6 +75,7 @@ func getItem(c *gin.Context) {
 			"message": "Error getting Items",
 			"error":   tx.Error.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 

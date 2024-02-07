@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 	"gorm.io/gorm"
 )
 
@@ -21,6 +22,7 @@ func takeItem(c *gin.Context) {
 			"message": "Invalid ItemTime",
 			"error":   err.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 
@@ -31,6 +33,7 @@ func takeItem(c *gin.Context) {
 				"status":  http.StatusNotFound,
 				"message": "Item not found",
 			})
+			utils.DebugLog.Println(err)
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -38,6 +41,7 @@ func takeItem(c *gin.Context) {
 			"message": "Error taking Item",
 			"error":   err.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 

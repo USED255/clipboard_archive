@@ -18,13 +18,15 @@ func TestGetPing(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/api/v2/ping", nil)
 	r.ServeHTTP(w, req)
+
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := gin.H{
+
+	expected := ginHToGinH(gin.H{
 		"status":  http.StatusOK,
 		"message": "pong",
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	})
+	got := stringToJson(w.Body.String())
+
 	assert.Equal(t, expected, got)
 }
 
@@ -36,12 +38,13 @@ func TestGetVersion(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/v2/version", nil)
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := gin.H{
+
+	expected := ginHToGinH(gin.H{
 		"status":  http.StatusOK,
 		"version": database.Version,
 		"message": fmt.Sprintf("version %d", database.Version),
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	})
+	got := stringToJson(w.Body.String())
+
 	assert.Equal(t, expected, got)
 }

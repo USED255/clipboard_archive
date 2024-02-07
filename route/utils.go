@@ -1,14 +1,9 @@
 package route
 
 import (
-	"time"
+	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func GetUnixMillisTimestamp() int64 {
-	return time.Now().UnixNano() / int64(time.Millisecond)
-}
+var err error
 
-type jsonItem struct {
-	Time int64  `json:"Time" binding:"required"` // unix milliseconds timestamp
-	Data string `json:"Data"  binding:"required"`
-}
+type Item database.Item

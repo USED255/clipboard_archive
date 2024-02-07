@@ -20,11 +20,11 @@ func TestInsertItem(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationJsonItem()
-	itemReq := itemToGinH(item)
+	item := newJsonItem()
+	itemReq := jsonItemToGinH(item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", item.Time), strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", item.Time), strings.NewReader(ginHToJson(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
@@ -34,8 +34,8 @@ func TestInsertItem(t *testing.T) {
 		"message":  "Item created successfully",
 		"ItemTime": item.Time,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	assert.Equal(t, expected, got)
 
 	var item2 Item
@@ -65,8 +65,8 @@ func TestInsertItemBindJsonError(t *testing.T) {
 		"status":  http.StatusBadRequest,
 		"message": "Invalid JSON",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
 	assert.Equal(t, expected, got)
@@ -79,10 +79,10 @@ func TestInsertItemDatabaseError(t *testing.T) {
 	database.OpenNoDatabase()
 	defer database.Close()
 
-	itemReq := itemToGinH(preparationJsonItem())
+	itemReq := jsonItemToGinH(newJsonItem())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", 1), strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", 1), strings.NewReader(ginHToJson(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -91,8 +91,8 @@ func TestInsertItemDatabaseError(t *testing.T) {
 		"status":  http.StatusInternalServerError,
 		"message": "Error upserting Item",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
 	assert.Equal(t, expected, got)

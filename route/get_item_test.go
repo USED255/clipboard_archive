@@ -17,7 +17,7 @@ func TestGetItems(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -34,8 +34,8 @@ func TestGetItems(t *testing.T) {
 		"message":        "Items found successfully",
 		"Items":          items,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
 }
@@ -47,7 +47,7 @@ func TestGetItemsStartTimeQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -66,8 +66,8 @@ func TestGetItemsStartTimeQuery(t *testing.T) {
 		"message":        "Items found successfully",
 		"Items":          items,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
 }
@@ -79,7 +79,7 @@ func TestGetItemsStartTimeQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -92,8 +92,8 @@ func TestGetItemsStartTimeQueryError(t *testing.T) {
 		"status":  http.StatusBadRequest,
 		"message": "Invalid startTime",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
 	assert.Equal(t, expected, got)
@@ -106,7 +106,7 @@ func TestGetItemsEndTimeQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -125,8 +125,8 @@ func TestGetItemsEndTimeQuery(t *testing.T) {
 		"message":        "Items found successfully",
 		"Items":          items,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
 }
@@ -138,7 +138,7 @@ func TestGetItemsEndTimeQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -151,8 +151,8 @@ func TestGetItemsEndTimeQueryError(t *testing.T) {
 		"status":  http.StatusBadRequest,
 		"message": "Invalid endTime",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
 	assert.Equal(t, expected, got)
@@ -165,10 +165,10 @@ func TestGetItemsLimitQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
-	item2 := preparationItemReflect()
+	item2 := newItemReflect()
 	item2.Time = 1
 	database.Orm.Create(&item2)
 
@@ -188,8 +188,8 @@ func TestGetItemsLimitQuery(t *testing.T) {
 		"message":        "Items found successfully",
 		"Items":          items,
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
 }
@@ -201,7 +201,7 @@ func TestGetItemsLimitQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -214,8 +214,8 @@ func TestGetItemsLimitQueryError(t *testing.T) {
 		"status":  http.StatusBadRequest,
 		"message": "Invalid limit",
 	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
 	assert.Equal(t, expected, got)
@@ -228,7 +228,7 @@ func TestGetItemsAllQuery(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := preparationItemReflect()
+	item := newItemReflect()
 	database.Orm.Create(&item)
 
 	w := httptest.NewRecorder()
@@ -243,14 +243,13 @@ func TestGetItemsAllQuery(t *testing.T) {
 		"endTime":   "1844674407370955161",
 		"limit":     "1",
 	}
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"message":        "Items found successfully",
 		"Items":          items,
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
+	})
+	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
 }

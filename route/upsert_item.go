@@ -12,7 +12,7 @@ import (
 )
 
 func upsertItem(c *gin.Context) {
-	var jsonItem struct {
+	var json struct {
 		Data string `json:"Data" binding:"required"`
 	}
 	time, err := strconv.ParseInt(c.Params.ByName("time"), 10, 64)
@@ -25,7 +25,7 @@ func upsertItem(c *gin.Context) {
 		utils.DebugLog.Println(err)
 		return
 	}
-	err = c.BindJSON(&jsonItem)
+	err = c.BindJSON(&json)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
@@ -35,7 +35,7 @@ func upsertItem(c *gin.Context) {
 		utils.DebugLog.Println(err)
 		return
 	}
-	data, err := base64.StdEncoding.DecodeString(jsonItem.Data)
+	data, err := base64.StdEncoding.DecodeString(json.Data)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  http.StatusBadRequest,
@@ -46,21 +46,21 @@ func upsertItem(c *gin.Context) {
 		return
 	}
 
-	tx := database.Orm.Create(&Item{
+	err = database.Orm.Create(&Item{
 		Time: time,
 		Data: data,
-	})
-	if tx.Error != nil {
-		if strings.HasPrefix(tx.Error.Error(), "constraint failed") {
-			tx := database.Orm.Save(&Item{
+	}).Error
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "constraint failed") {
+			err := database.Orm.Save(&Item{
 				Time: time,
 				Data: data,
-			})
-			if tx.Error != nil {
+			}).Error
+			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"status":  http.StatusInternalServerError,
 					"message": "Error upserting Item",
-					"error":   tx.Error.Error(),
+					"error":   err.Error(),
 				})
 				utils.DebugLog.Println(err)
 				return
@@ -69,7 +69,7 @@ func upsertItem(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
 			"message": "Error upserting Item",
-			"error":   tx.Error.Error(),
+			"error":   err.Error(),
 		})
 		utils.DebugLog.Println(err)
 		return

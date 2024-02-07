@@ -8,10 +8,6 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-var err error
-
-type Item database.Item
-
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r.SetTrustedProxies([]string{"192.168.0.0/24", "172.16.0.0/12", "10.0.0.0/8"}) // Private network

@@ -6,17 +6,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func getItemCount(c *gin.Context) {
 	var count int64
 
-	database.Orm.Model(&Item{}).Count(&count)
-	if database.Orm.Error != nil {
+	err = database.Orm.Model(&Item{}).Count(&count).Error
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
-			"message": database.Orm.Error.Error(),
+			"message": "Error getting item count",
+			"error":   err.Error(),
 		})
+		utils.DebugLog.Println(err)
 		return
 	}
 

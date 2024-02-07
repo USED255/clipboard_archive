@@ -21,7 +21,7 @@ func deleteItem(c *gin.Context) {
 		return
 	}
 
-	err = database.Orm.Delete(&Item{Time: time}).Error
+	err = database.Orm.Delete(&Item{}, time).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{

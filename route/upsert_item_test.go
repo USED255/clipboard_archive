@@ -1,6 +1,8 @@
 package route
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,43 +15,48 @@ import (
 
 func TestInsertItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
+
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
 
 	item := preparationJsonItem()
 	itemReq := itemToGinH(item)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", item.Time), strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	itemReq["Index"] = 1
 	expected := gin.H{
-		"status":  http.StatusCreated,
-		"message": "Item created successfully",
-		"Item":    itemReq,
+		"status":   http.StatusCreated,
+		"message":  "Item created successfully",
+		"ItemTime": item.Time,
 	}
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	assert.Equal(t, expected, got)
 
-	item.Time = 1
 	var item2 Item
 	database.Orm.Where(&Item{Time: item.Time}).First(&item2)
-	assert.Equal(t, item, item2)
-
-	database.Close()
+	data := base64.StdEncoding.EncodeToString(item2.Data)
+	item3 := jsonItem{
+		Time: item2.Time,
+		Data: data,
+	}
+	assert.Equal(t, item, item3)
 }
 
 func TestInsertItemBindJsonError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
 
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v1/Item", strings.NewReader("{}"))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", 1), strings.NewReader("{}"))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -61,35 +68,8 @@ func TestInsertItemBindJsonError(t *testing.T) {
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	delete(got, "error")
+
 	assert.Equal(t, expected, got)
-
-	database.Close()
-}
-
-func TestInsertItemUniqueError(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
-	r := SetupRouter()
-
-	item := preparationJsonItem()
-	itemReq := itemToGinH(item)
-	database.Orm.Create(&item)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusConflict, w.Code)
-
-	expected := gin.H{
-		"status":  http.StatusConflict,
-		"message": "Item already exists",
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
-
-	database.Close()
 }
 
 func TestInsertItemDatabaseError(t *testing.T) {
@@ -102,19 +82,18 @@ func TestInsertItemDatabaseError(t *testing.T) {
 	itemReq := itemToGinH(preparationJsonItem())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/v2/Item", strings.NewReader(dumpJSON(itemReq)))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", 1), strings.NewReader(dumpJSON(itemReq)))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	expected := gin.H{
 		"status":  http.StatusInternalServerError,
-		"message": "Error inserting Item",
+		"message": "Error upserting Item",
 	}
-	delete(expected, "error")
 	expected = reloadJSON(expected)
 	got := loadJSON(w.Body.String())
 	delete(got, "error")
-	assert.Equal(t, expected, got)
 
+	assert.Equal(t, expected, got)
 }

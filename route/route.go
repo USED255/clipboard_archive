@@ -30,13 +30,12 @@ func SetupRouter() *gin.Engine {
 			"message": fmt.Sprintf("version %d", database.Version),
 		})
 	})
-	api.POST("/Item", insertItem)
-	api.DELETE("/Item/:time", deleteItem)
 	api.GET("/Item", getItem)
 	api.GET("/Item/:time", takeItem)
-	api.PUT("/Item/:time", updateItem)
 	api.GET("/Item/count", getItemCount)
 	api.GET("/Item/search", searchItem)
+	api.PUT("/Item/:time", upsertItem)
+	api.DELETE("/Item/:time", deleteItem)
 
 	return r
 }

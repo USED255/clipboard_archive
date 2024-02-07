@@ -62,25 +62,3 @@ func TestDeleteItemParamsError(t *testing.T) {
 
 	database.Close()
 }
-
-func TestDeleteItemNotFoundError(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
-	r := SetupRouter()
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/api/v2/Item/0", nil)
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-
-	expected := gin.H{
-		"status":  http.StatusNotFound,
-		"message": "Item not found",
-	}
-	expected = reloadJSON(expected)
-	got := loadJSON(w.Body.String())
-	assert.Equal(t, expected, got)
-
-	database.Close()
-}

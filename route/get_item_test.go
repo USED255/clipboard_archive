@@ -28,13 +28,12 @@ func TestGetItems(t *testing.T) {
 
 	items := []int64{item.Time}
 	requestedForm := gin.H{}
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"message":        "Items found successfully",
 		"Items":          items,
-	}
-	expected = ginHToGinH(expected)
+	})
 	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
@@ -60,13 +59,12 @@ func TestGetItemsStartTimeQuery(t *testing.T) {
 	requestedForm := gin.H{
 		"startTime": "1",
 	}
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"message":        "Items found successfully",
 		"Items":          items,
-	}
-	expected = ginHToGinH(expected)
+	})
 	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
@@ -79,8 +77,7 @@ func TestGetItemsStartTimeQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := newItemReflect()
-	database.Orm.Create(&item)
+	database.Orm.Create(newItemReflect())
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v2/Item?startTime=a", nil)
@@ -88,11 +85,10 @@ func TestGetItemsStartTimeQueryError(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":  http.StatusBadRequest,
 		"message": "Invalid startTime",
-	}
-	expected = ginHToGinH(expected)
+	})
 	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
@@ -119,13 +115,12 @@ func TestGetItemsEndTimeQuery(t *testing.T) {
 	requestedForm := gin.H{
 		"endTime": "1844674407370955161",
 	}
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"message":        "Items found successfully",
 		"Items":          items,
-	}
-	expected = ginHToGinH(expected)
+	})
 	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
@@ -138,8 +133,7 @@ func TestGetItemsEndTimeQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := newItemReflect()
-	database.Orm.Create(&item)
+	database.Orm.Create(newItemReflect())
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v2/Item?endTime=a", nil)
@@ -147,11 +141,10 @@ func TestGetItemsEndTimeQueryError(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":  http.StatusBadRequest,
 		"message": "Invalid endTime",
-	}
-	expected = ginHToGinH(expected)
+	})
 	got := stringToJson(w.Body.String())
 	delete(got, "error")
 
@@ -182,13 +175,12 @@ func TestGetItemsLimitQuery(t *testing.T) {
 	requestedForm := gin.H{
 		"limit": "1",
 	}
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":         http.StatusOK,
 		"requested_form": requestedForm,
 		"message":        "Items found successfully",
 		"Items":          items,
-	}
-	expected = ginHToGinH(expected)
+	})
 	got := stringToJson(w.Body.String())
 
 	assert.Equal(t, expected, got)
@@ -201,20 +193,16 @@ func TestGetItemsLimitQueryError(t *testing.T) {
 	database.Open("file::memory:?cache=shared")
 	defer database.Close()
 
-	item := newItemReflect()
-	database.Orm.Create(&item)
-
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v2/Item?limit=a", nil)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":  http.StatusBadRequest,
 		"message": "Invalid limit",
-	}
-	expected = ginHToGinH(expected)
+	})
 	got := stringToJson(w.Body.String())
 	delete(got, "error")
 

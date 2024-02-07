@@ -26,6 +26,7 @@ func connectDatabase(dns string) error {
 	}
 	return nil
 }
+
 func getDatabaseVersion() (int64, error) {
 	var config Config
 	var databaseVersion int64

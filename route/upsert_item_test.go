@@ -13,7 +13,7 @@ import (
 	"github.com/used255/clipboard_archive/v5/database"
 )
 
-func TestInsertItem(t *testing.T) {
+func TestUpsertItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -21,34 +21,71 @@ func TestInsertItem(t *testing.T) {
 	defer database.Close()
 
 	item := newJsonItem()
-	itemReq := jsonItemToGinH(item)
+	time := item.Time
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", item.Time), strings.NewReader(ginHToJson(itemReq)))
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", time), strings.NewReader(ginHToJson(jsonItemToGinH(item))))
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	expected := gin.H{
+	expected := ginHToGinH(gin.H{
 		"status":   http.StatusCreated,
 		"message":  "Item created successfully",
-		"ItemTime": item.Time,
-	}
-	expected = ginHToGinH(expected)
+		"ItemTime": time,
+	})
 	got := stringToJson(w.Body.String())
 	assert.Equal(t, expected, got)
 
+	item.Data = stringToBase64(randString(5))
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", time), strings.NewReader(ginHToJson(jsonItemToGinH(item))))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	expected = ginHToGinH(gin.H{
+		"status":   http.StatusCreated,
+		"message":  "Item created successfully",
+		"ItemTime": time,
+	})
+	got = stringToJson(w.Body.String())
+
+	assert.Equal(t, expected, got)
+
 	var item2 Item
-	database.Orm.Where(&Item{Time: item.Time}).First(&item2)
-	data := base64.StdEncoding.EncodeToString(item2.Data)
-	item3 := jsonItem{
-		Time: item2.Time,
-		Data: data,
+	database.Orm.First(&item2, time)
+	gotItem := jsonItem{
+		Time: time,
+		Data: base64.StdEncoding.EncodeToString(item2.Data),
 	}
-	assert.Equal(t, item, item3)
+	assert.Equal(t, item, gotItem)
 }
 
-func TestInsertItemBindJsonError(t *testing.T) {
+func TestUpsertItemParamsError(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := SetupRouter()
+
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/v2/Item/a", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	expected := ginHToGinH(gin.H{
+		"status":  http.StatusBadRequest,
+		"message": "Invalid ItemTime",
+	})
+	got := stringToJson(w.Body.String())
+	delete(got, "error")
+
+	assert.Equal(t, expected, got)
+}
+
+func TestUpsertItemBindJsonError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -72,7 +109,31 @@ func TestInsertItemBindJsonError(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestInsertItemDatabaseError(t *testing.T) {
+func TestUpsertItemDecodeError(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := SetupRouter()
+
+	database.Open("file::memory:?cache=shared")
+	defer database.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", fmt.Sprintf("/api/v2/Item/%d", 1), strings.NewReader("{\"data\":\"a\"}"))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	expected := gin.H{
+		"status":  http.StatusBadRequest,
+		"message": "Invalid Data",
+	}
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
+	delete(got, "error")
+
+	assert.Equal(t, expected, got)
+}
+
+func TestUpsertItemDatabaseError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 

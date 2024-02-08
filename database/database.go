@@ -1,6 +1,8 @@
 package database
 
 import (
+	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -22,14 +24,20 @@ func Open(dns string) error {
 }
 
 func Close() error {
+	if Orm == nil {
+		return errors.New("database not connected")
+	}
+
 	sqlDB, err := Orm.DB()
 	if err != nil {
 		return err
 	}
+
 	err = sqlDB.Close()
 	if err != nil {
 		return err
 	}
+
 	Orm = nil
 	return nil
 }

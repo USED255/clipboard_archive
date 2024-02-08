@@ -6,6 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestOpenNoDataBase(t *testing.T) {
+	OpenNoDatabase()
+}
+
 func TestCreateVersion0Database(t *testing.T) {
 	var config Config
 	connectDatabase("file::memory:?cache=shared")

@@ -8,10 +8,50 @@ import (
 
 func TestConnectDatabase(t *testing.T) {
 	connectDatabase("file::memory:?cache=shared")
+	defer Close()
 
 	assert.NotNil(t, Orm)
+}
 
-	Close()
+func TestGetDatabaseVersion(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+	defer Close()
+
+	initializingDatabase()
+
+	v, _ := getDatabaseVersion()
+	assert.Equal(t, version, v)
+}
+
+func TestGetDatabaseVersion0(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+	defer Close()
+
+	v, _ := getDatabaseVersion()
+	assert.Equal(t, int64(0), v)
+}
+
+func TestGetDatabaseVersion1(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+	defer Close()
+
+	Orm.AutoMigrate(&Config{})
+	migrateVersion0To1()
+
+	v, _ := getDatabaseVersion()
+	assert.Equal(t, int64(1), v)
+}
+
+func TestGetDatabaseVersionError(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+	defer Close()
+
+	Orm.AutoMigrate(&Config{})
+	Orm.Create(&Config{Key: "version", Value: "a"})
+
+	v, err := getDatabaseVersion()
+	assert.Error(t, err)
+	assert.Equal(t, int64(0), v)
 }
 
 func TestGetMajorVersion(t *testing.T) {

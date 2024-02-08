@@ -1,14 +1,12 @@
 package route
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/used255/clipboard_archive/v5/database"
 	"github.com/used255/clipboard_archive/v5/utils"
-	"gorm.io/gorm"
 )
 
 func deleteItem(c *gin.Context) {
@@ -25,14 +23,6 @@ func deleteItem(c *gin.Context) {
 
 	err = database.Orm.Delete(&Item{}, time).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  http.StatusNotFound,
-				"message": "Item not found",
-			})
-			utils.DebugLog.Println(err)
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
 			"message": "Error deleting Item",

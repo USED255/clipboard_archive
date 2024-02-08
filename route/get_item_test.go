@@ -241,3 +241,27 @@ func TestGetItemsAllQuery(t *testing.T) {
 
 	assert.Equal(t, expected, got)
 }
+
+func TestGetItemsDatabaseError(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := SetupRouter()
+
+	database.OpenNoDatabase()
+	defer database.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v2/Item", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	expected := gin.H{
+		"status":  http.StatusInternalServerError,
+		"message": "Error getting Items",
+	}
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
+	delete(got, "error")
+
+	assert.Equal(t, expected, got)
+}

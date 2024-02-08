@@ -15,18 +15,12 @@ function hasBigData() {
     return false
 }
 
-function NewItem(Item) {
-    return JSON.stringify({
-        "Time": parseInt(str(Item["application/x-copyq-user-copy-time"])),
-        "Data": toBase64(pack(Item)),
-    });
-}
-
 function main() {
     if (hasBigData()) {
         return;
     }
-    Item = NewItem(getItem(0));
+    url = url + str(Item["application/x-copyq-user-copy-time"]);
+    Item = JSON.stringify({"Data": toBase64(pack(Item))});
     networkPost(url, Item).data;
 }
 

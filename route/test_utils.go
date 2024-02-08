@@ -17,8 +17,12 @@ type jsonItem struct {
 func newJsonItem() jsonItem {
 	return jsonItem{
 		Time: getUnixMillisTimestamp(),
-		Data: base64.StdEncoding.EncodeToString([]byte(randString(5))),
+		Data: stringToBase64(randString(5)),
 	}
+}
+
+func stringToBase64(s string) string {
+	return base64.StdEncoding.EncodeToString([]byte(s))
 }
 
 func newItemReflect() *Item {

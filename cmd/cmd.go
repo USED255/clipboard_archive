@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -25,7 +26,7 @@ func Start() {
 
 	gin.SetMode(gin.ReleaseMode)
 	database.OrmConfig = &gorm.Config{}
-	utils.DebugLog = log.New(nil, "", 0)
+	utils.DebugLog = log.New(io.Discard, "", 0)
 
 	if *versionFlagPtr {
 		fmt.Println(database.Version)

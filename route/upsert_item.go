@@ -4,11 +4,11 @@ import (
 	"encoding/base64"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/used255/clipboard_archive/v5/database"
 	"github.com/used255/clipboard_archive/v5/utils"
+	"gorm.io/gorm/clause"
 )
 
 func upsertItem(c *gin.Context) {
@@ -46,26 +46,14 @@ func upsertItem(c *gin.Context) {
 		return
 	}
 
-	err = database.Orm.Create(&Item{
+	err = database.Orm.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "time"}},
+		DoUpdates: clause.AssignmentColumns([]string{"data"}),
+	}).Create(&Item{
 		Time: time,
 		Data: data,
 	}).Error
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "constraint failed") {
-			err := database.Orm.Save(&Item{
-				Time: time,
-				Data: data,
-			}).Error
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"status":  http.StatusInternalServerError,
-					"message": "Error upserting Item",
-					"error":   err.Error(),
-				})
-				utils.DebugLog.Println(err)
-				return
-			}
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
 			"message": "Error upserting Item",

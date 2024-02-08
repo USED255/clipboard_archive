@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/base64"
 	"log"
 	"testing"
 
@@ -8,15 +9,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDumpJSON(t *testing.T) {
-	assert.Equal(t, "{}", ginHToJson(gin.H{}))
-}
-func TestLoadJSON(t *testing.T) {
-	assert.Equal(t, gin.H{}, stringToJson("{}"))
+func TestNewJsonItem(t *testing.T) {
+	newJsonItem()
 }
 
-func TestReloadJSON(t *testing.T) {
-	assert.Equal(t, gin.H{}, ginHToGinH(gin.H{}))
+func TestStringToBase64(t *testing.T) {
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("test")), stringToBase64("test"))
+}
+
+func TestNewItemReflect(t *testing.T) {
+	newItemReflect()
+}
+
+func TestGetUnixMillisTimestamp(t *testing.T) {
+	ts := getUnixMillisTimestamp()
+	assert.True(t, ts > 0)
 }
 
 func TestRandString(t *testing.T) {
@@ -28,14 +35,18 @@ func TestRandString(t *testing.T) {
 	assert.NotEqual(t, a, b)
 }
 
-func TestItemToGinH(t *testing.T) {
+func TestJsonItemToGinH(t *testing.T) {
 	jsonItemToGinH(newJsonItem())
 }
 
-func TestPreparationItem(t *testing.T) {
-	newJsonItem()
+func TestGinHToGinH(t *testing.T) {
+	assert.Equal(t, gin.H{}, ginHToGinH(gin.H{}))
 }
-func TestGetUnixMillisTimestamp(t *testing.T) {
-	ts := getUnixMillisTimestamp()
-	assert.True(t, ts > 0)
+
+func TestStringToJson(t *testing.T) {
+	assert.Equal(t, gin.H{}, stringToJson("{}"))
+}
+
+func TestGinHToJson(t *testing.T) {
+	assert.Equal(t, "{}", ginHToJson(gin.H{}))
 }

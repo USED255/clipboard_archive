@@ -63,3 +63,27 @@ func TestDeleteItemParamsError(t *testing.T) {
 
 	assert.Equal(t, expected, got)
 }
+
+func TestDeleteItemDatabaseError(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	r := SetupRouter()
+
+	database.OpenNoDatabase()
+	defer database.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/v2/Item/1", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	expected := gin.H{
+		"status":  http.StatusInternalServerError,
+		"message": "Error deleting Item",
+	}
+	expected = ginHToGinH(expected)
+	got := stringToJson(w.Body.String())
+	delete(got, "error")
+
+	assert.Equal(t, expected, got)
+}

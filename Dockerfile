@@ -9,6 +9,6 @@ RUN    go env -w CGO_ENABLED=0 \
 
 FROM alpine:latest
 
-RUN apk add --no-cache tzdata
 ENTRYPOINT [ "/clipboard_archive" ]
+RUN apk add --no-cache tzdata
 COPY --from=build /clipboard_archive/clipboard_archive  /clipboard_archive

@@ -35,7 +35,7 @@ func migrateVersion() error {
 		case version:
 			return nil
 		case 3:
-			err = migrateVersion3To4()
+			err = migrateVersion3To5()
 			if err != nil {
 				return err
 			}
@@ -82,16 +82,16 @@ func initializingDatabase() error {
 	return nil
 }
 
-func migrateVersion3To4() error {
-	log.Println("Migrating to version 4")
+func migrateVersion3To5() error {
+	log.Println("Migrating to version 5")
 
-	rows, err := Orm.Model(&ClipboardItem{}).Rows()
+	tx := Orm.Begin()
+	rows, err := tx.Model(&ClipboardItem{}).Rows()
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
-	tx := Orm.Begin()
 	err = tx.Migrator().CreateTable(&Item{})
 	if err != nil {
 		tx.Rollback()
@@ -100,7 +100,7 @@ func migrateVersion3To4() error {
 
 	for rows.Next() {
 		var item ClipboardItem
-		err = Orm.ScanRows(rows, &item)
+		err = tx.ScanRows(rows, &item)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -120,7 +120,7 @@ func migrateVersion3To4() error {
 		}
 	}
 
-	err = tx.Save(&Config{Key: "version", Value: "4"}).Error
+	err = tx.Save(&Config{Key: "version", Value: "5"}).Error
 	if err != nil {
 		tx.Rollback()
 		return err

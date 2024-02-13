@@ -21,7 +21,7 @@ func Start() {
 	databasePathFlagPtr := flag.String("database", "clipboard_archive.sqlite3", "database path")
 	bindFlagPtr := flag.String("bind", ":8080", "bind address")
 	versionFlagPtr := flag.Bool("v", false, "show version")
-	debugFlagPtr := flag.Bool("debug", false, "")
+	debugFlagPtr := flag.Bool("debug", false, "enable debug mode")
 
 	flag.Parse()
 

@@ -17,7 +17,7 @@ func TestGetDatabaseVersion(t *testing.T) {
 	connectDatabase("file::memory:?cache=shared")
 	defer Close()
 
-	initializingDatabase()
+	InitializeDatabase()
 
 	v, _ := getDatabaseVersion()
 	assert.Equal(t, version, v)

@@ -2,7 +2,6 @@ package route
 
 import (
 	"encoding/base64"
-	"log"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -30,8 +29,6 @@ func TestRandString(t *testing.T) {
 	assert.Len(t, randString(5), 5)
 	a := randString(5)
 	b := randString(5)
-	log.Println("a:", a)
-	log.Println("b:", b)
 	assert.NotEqual(t, a, b)
 }
 

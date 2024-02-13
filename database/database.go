@@ -11,8 +11,8 @@ const Version = version
 var OrmConfig *gorm.Config
 var Orm *gorm.DB
 
-func Open(dns string) error {
-	err = connectDatabase(dns)
+func Open(dsn string) error {
+	err = connectDatabase(dsn)
 	if err != nil {
 		return err
 	}

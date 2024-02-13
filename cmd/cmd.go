@@ -18,6 +18,7 @@ import (
 var err error
 
 func Start() {
+	databasePathFlagPtr := flag.String("database", "clipboard_archive.sqlite3", "database path")
 	bindFlagPtr := flag.String("bind", ":8080", "bind address")
 	versionFlagPtr := flag.Bool("v", false, "show version")
 	debugFlagPtr := flag.Bool("debug", false, "")
@@ -42,7 +43,7 @@ func Start() {
 
 	log.Println("Welcome 🐱‍🏍")
 
-	err = database.Open("clipboard_archive.db")
+	err = database.Open(*databasePathFlagPtr)
 	if err != nil {
 		log.Fatal(err)
 	}

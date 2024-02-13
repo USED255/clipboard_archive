@@ -19,7 +19,8 @@ func migrateVersion() error {
 	var databaseVersion int64
 
 	if !Orm.Migrator().HasTable(&Config{}) {
-		err = initializingDatabase()
+		log.Println("Initialize database")
+		err = InitializeDatabase()
 		if err != nil {
 			return err
 		}
@@ -35,11 +36,13 @@ func migrateVersion() error {
 		case version:
 			return nil
 		case 4:
+			log.Println("Migrate to version 5")
 			err = migrateVersion4To5()
 			if err != nil {
 				return err
 			}
 		case 3:
+			log.Println("Migrate to version 5")
 			err = migrateVersion3To5()
 			if err != nil {
 				return err
@@ -69,9 +72,7 @@ func migrateVersion() error {
 	}
 }
 
-func initializingDatabase() error {
-	log.Println("No data in database, initializing")
-
+func InitializeDatabase() error {
 	tx := Orm.Begin()
 	err = tx.AutoMigrate(&Item{}, &Config{})
 	if err != nil {
@@ -88,7 +89,6 @@ func initializingDatabase() error {
 }
 
 func migrateVersion4To5() error {
-	log.Println("Migrating to version 5")
 	err = Orm.Save(&Config{Key: "version", Value: "5"}).Error
 	if err != nil {
 		return err
@@ -97,8 +97,6 @@ func migrateVersion4To5() error {
 }
 
 func migrateVersion3To5() error {
-	log.Println("Migrating to version 5")
-
 	tx := Orm.Begin()
 	rows, err := tx.Model(&ClipboardItem{}).Rows()
 	if err != nil {

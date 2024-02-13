@@ -13,14 +13,14 @@ var err error
 
 const version int64 = 5
 
-func connectDatabase(dns string) error {
+func connectDatabase(dsn string) error {
 	if Orm != nil {
 		return errors.New("database already connected")
 	}
 	if OrmConfig == nil {
 		OrmConfig = &gorm.Config{}
 	}
-	Orm, err = gorm.Open(sqlite.Open(dns), OrmConfig)
+	Orm, err = gorm.Open(sqlite.Open(dsn), OrmConfig)
 	if err != nil {
 		return err
 	}

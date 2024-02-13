@@ -27,3 +27,14 @@ func TestMigrateVersion0Database(t *testing.T) {
 	v, _ := getDatabaseVersion()
 	assert.Equal(t, version, v)
 }
+
+func TestMigrateInvalidVersion(t *testing.T) {
+	connectDatabase("file::memory:?cache=shared")
+	defer Close()
+
+	Orm.Exec(createConfigsTableQuery)
+	Orm.Save(&Config{Key: "version", Value: "a"})
+	err = migrateVersion()
+
+	assert.Error(t, err)
+}

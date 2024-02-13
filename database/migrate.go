@@ -34,6 +34,11 @@ func migrateVersion() error {
 		switch databaseVersion {
 		case version:
 			return nil
+		case 4:
+			err = migrateVersion4To5()
+			if err != nil {
+				return err
+			}
 		case 3:
 			err = migrateVersion3To5()
 			if err != nil {
@@ -79,6 +84,15 @@ func initializingDatabase() error {
 		return err
 	}
 	tx.Commit()
+	return nil
+}
+
+func migrateVersion4To5() error {
+	log.Println("Migrating to version 5")
+	err = Orm.Save(&Config{Key: "version", Value: "5"}).Error
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

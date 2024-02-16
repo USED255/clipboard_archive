@@ -22,6 +22,7 @@ func connectDatabase(dsn string) error {
 	}
 	Orm, err = gorm.Open(sqlite.Open(dsn), OrmConfig)
 	if err != nil {
+		//比如数据库损坏
 		return err
 	}
 	return nil

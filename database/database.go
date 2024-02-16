@@ -18,6 +18,7 @@ func Open(dsn string) error {
 	}
 	err = migrateVersion()
 	if err != nil {
+		//迁移失败
 		return err
 	}
 	return nil
@@ -30,11 +31,13 @@ func Close() error {
 
 	sqlDB, err := Orm.DB()
 	if err != nil {
+		//?
 		return err
 	}
 
 	err = sqlDB.Close()
 	if err != nil {
+		//无法关闭?
 		return err
 	}
 

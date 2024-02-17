@@ -1,6 +1,7 @@
 package route
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,9 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func TestGetItemCount(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -36,6 +39,7 @@ func TestGetItemCount(t *testing.T) {
 }
 
 func TestGetItemCountDatabaseError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 

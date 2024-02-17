@@ -3,6 +3,7 @@ package route
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,9 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func TestUpsertItem(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -63,6 +66,7 @@ func TestUpsertItem(t *testing.T) {
 }
 
 func TestUpsertItemParamsError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -86,6 +90,7 @@ func TestUpsertItemParamsError(t *testing.T) {
 }
 
 func TestUpsertItemBindJsonError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -110,6 +115,7 @@ func TestUpsertItemBindJsonError(t *testing.T) {
 }
 
 func TestUpsertItemDecodeError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -134,6 +140,7 @@ func TestUpsertItemDecodeError(t *testing.T) {
 }
 
 func TestUpsertItemDatabaseError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 

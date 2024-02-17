@@ -2,6 +2,7 @@ package route
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,9 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func TestDeleteItem(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -42,6 +45,7 @@ func TestDeleteItem(t *testing.T) {
 }
 
 func TestDeleteItemParamsError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -65,6 +69,7 @@ func TestDeleteItemParamsError(t *testing.T) {
 }
 
 func TestDeleteItemDatabaseError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 

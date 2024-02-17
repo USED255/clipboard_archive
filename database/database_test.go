@@ -4,9 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func TestOpenDatabase(t *testing.T) {
+	OrmConfig = &gorm.Config{Logger: logger.Default.LogMode(logger.Info)}
 	Open("file::memory:?cache=shared")
 	defer Close()
 

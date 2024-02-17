@@ -2,6 +2,7 @@ package route
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,9 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func TestGetPing(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -31,6 +34,7 @@ func TestGetPing(t *testing.T) {
 }
 
 func TestGetVersion(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 

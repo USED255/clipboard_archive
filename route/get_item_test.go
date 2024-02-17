@@ -1,6 +1,7 @@
 package route
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,9 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func TestGetItems(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -40,6 +43,7 @@ func TestGetItems(t *testing.T) {
 }
 
 func TestGetItemsStartTimeQuery(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -71,6 +75,7 @@ func TestGetItemsStartTimeQuery(t *testing.T) {
 }
 
 func TestGetItemsStartTimeQueryError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -96,6 +101,7 @@ func TestGetItemsStartTimeQueryError(t *testing.T) {
 }
 
 func TestGetItemsEndTimeQuery(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -127,6 +133,7 @@ func TestGetItemsEndTimeQuery(t *testing.T) {
 }
 
 func TestGetItemsEndTimeQueryError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -152,6 +159,7 @@ func TestGetItemsEndTimeQueryError(t *testing.T) {
 }
 
 func TestGetItemsLimitQuery(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -187,6 +195,7 @@ func TestGetItemsLimitQuery(t *testing.T) {
 }
 
 func TestGetItemsLimitQueryError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -210,6 +219,7 @@ func TestGetItemsLimitQueryError(t *testing.T) {
 }
 
 func TestGetItemsAllQuery(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -243,6 +253,7 @@ func TestGetItemsAllQuery(t *testing.T) {
 }
 
 func TestGetItemsDatabaseError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 

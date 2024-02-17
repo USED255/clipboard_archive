@@ -3,6 +3,7 @@ package route
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,9 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/used255/clipboard_archive/v5/database"
+	"github.com/used255/clipboard_archive/v5/utils"
 )
 
 func TestTakeItems(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -44,6 +47,7 @@ func TestTakeItems(t *testing.T) {
 }
 
 func TestTakeItemsParamsError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	database.Open("file::memory:?cache=shared")
 	r := SetupRouter()
@@ -67,6 +71,7 @@ func TestTakeItemsParamsError(t *testing.T) {
 }
 
 func TestTakeItemsNotFoundError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
@@ -97,6 +102,7 @@ func TestTakeItemsNotFoundError(t *testing.T) {
 }
 
 func TestTakeItemsDatabaseError(t *testing.T) {
+	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 

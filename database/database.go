@@ -24,6 +24,19 @@ func Open(dsn string) error {
 	return nil
 }
 
+func Open2(dialector gorm.Dialector, config *gorm.Config) error {
+	err = connectDatabase2(dialector, config)
+	if err != nil {
+		return err
+	}
+	err = migrateVersion()
+	if err != nil {
+		//迁移失败
+		return err
+	}
+	return nil
+}
+
 func Close() error {
 	if Orm == nil {
 		return errors.New("database not connected")

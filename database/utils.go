@@ -28,6 +28,18 @@ func connectDatabase(dsn string) error {
 	return nil
 }
 
+func connectDatabase2(dialector gorm.Dialector, config *gorm.Config) error {
+	if Orm != nil {
+		return errors.New("database already connected")
+	}
+	Orm, err = gorm.Open(dialector, config)
+	if err != nil {
+		//比如数据库损坏
+		return err
+	}
+	return nil
+}
+
 func getDatabaseVersion() (int64, error) {
 	var config Config
 	var databaseVersion int64

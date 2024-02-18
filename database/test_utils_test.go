@@ -12,7 +12,7 @@ func TestOpenNoDataBase(t *testing.T) {
 
 func TestCreateVersion0Database(t *testing.T) {
 	var config Config
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 
 	createVersion0Database()
 

@@ -1,5 +1,11 @@
 package database
 
+import (
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+)
+
 const createItemsTableQuery = `
 CREATE TABLE "clipboard_items" (
 	"id" integer,
@@ -45,7 +51,12 @@ CREATE TABLE "configs" (
 `
 
 func OpenNoDatabase() {
-	connectDatabase("file::memory:?cache=shared")
+	connectDatabase(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
+}
+
+func OpenMemoryDatabase() {
+	OpenNoDatabase()
+	migrateVersion()
 }
 
 func createVersion0Database() {

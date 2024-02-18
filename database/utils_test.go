@@ -7,14 +7,14 @@ import (
 )
 
 func TestConnectDatabase(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	assert.NotNil(t, Orm)
 }
 
 func TestGetDatabaseVersion(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	InitializeDatabase()
@@ -24,7 +24,7 @@ func TestGetDatabaseVersion(t *testing.T) {
 }
 
 func TestGetDatabaseVersion0(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	v, _ := getDatabaseVersion()
@@ -32,7 +32,7 @@ func TestGetDatabaseVersion0(t *testing.T) {
 }
 
 func TestGetDatabaseVersion1(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	Orm.AutoMigrate(&Config{})
@@ -43,7 +43,7 @@ func TestGetDatabaseVersion1(t *testing.T) {
 }
 
 func TestGetDatabaseVersionError(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	Orm.AutoMigrate(&Config{})

@@ -1,5 +1,8 @@
 package utils
 
-import "log"
+import (
+	"io"
+	"log"
+)
 
-var DebugLog *log.Logger
+var DebugLog = log.New(io.Discard, "", 0)

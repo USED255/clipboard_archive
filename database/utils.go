@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -13,22 +12,7 @@ var err error
 
 const version int64 = 5
 
-func connectDatabase(dsn string) error {
-	if Orm != nil {
-		return errors.New("database already connected")
-	}
-	if OrmConfig == nil {
-		OrmConfig = &gorm.Config{}
-	}
-	Orm, err = gorm.Open(sqlite.Open(dsn), OrmConfig)
-	if err != nil {
-		//比如数据库损坏
-		return err
-	}
-	return nil
-}
-
-func connectDatabase2(dialector gorm.Dialector, config *gorm.Config) error {
+func connectDatabase(dialector gorm.Dialector, config *gorm.Config) error {
 	if Orm != nil {
 		return errors.New("database already connected")
 	}

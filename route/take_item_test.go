@@ -19,7 +19,7 @@ func TestTakeItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newJsonItem()
@@ -49,7 +49,7 @@ func TestTakeItems(t *testing.T) {
 func TestTakeItemsParamsError(t *testing.T) {
 	utils.DebugLog = log.Default()
 	gin.SetMode(gin.ReleaseMode)
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	r := SetupRouter()
 
 	w := httptest.NewRecorder()
@@ -75,7 +75,7 @@ func TestTakeItemsNotFoundError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newJsonItem()

@@ -7,7 +7,7 @@ import (
 )
 
 func TestMigrateVersion(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	migrateVersion()
@@ -17,7 +17,7 @@ func TestMigrateVersion(t *testing.T) {
 }
 
 func TestMigrateVersion0Database(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	createVersion0Database()
@@ -29,7 +29,7 @@ func TestMigrateVersion0Database(t *testing.T) {
 }
 
 func TestMigrateVersion4Database(t *testing.T) {
-	Open("file::memory:?cache=shared")
+	OpenMemoryDatabase()
 	defer Close()
 
 	Orm.Save(&Config{Key: "version", Value: "4"})
@@ -41,7 +41,7 @@ func TestMigrateVersion4Database(t *testing.T) {
 }
 
 func TestMigrateInvalidVersion(t *testing.T) {
-	connectDatabase("file::memory:?cache=shared")
+	OpenNoDatabase()
 	defer Close()
 
 	Orm.Exec(createConfigsTableQuery)

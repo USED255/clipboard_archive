@@ -3,11 +3,11 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
 	"github.com/used255/clipboard_archive/v5/database"
 	"github.com/used255/clipboard_archive/v5/route"
 	"github.com/used255/clipboard_archive/v5/utils"
@@ -25,25 +25,24 @@ func Start() {
 
 	flag.Parse()
 
-	gin.SetMode(gin.ReleaseMode)
-	database.OrmConfig = &gorm.Config{}
-	utils.DebugLog = log.New(io.Discard, "", 0)
-
 	if *versionFlagPtr {
 		fmt.Println(database.Version)
 		os.Exit(0)
 	}
 
+	gin.SetMode(gin.ReleaseMode)
+	ormConfig := &gorm.Config{}
+
 	if *debugFlagPtr {
 		gin.SetMode(gin.DebugMode)
-		database.OrmConfig = &gorm.Config{Logger: logger.Default.LogMode(logger.Info)}
+		ormConfig = &gorm.Config{Logger: logger.Default.LogMode(logger.Info)}
 		utils.DebugLog = log.Default()
 		utils.DebugLog.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 
 	log.Println("Welcome 🐱‍🏍")
 
-	err = database.Open(*databasePathFlagPtr)
+	err = database.Open(sqlite.Open(*databasePathFlagPtr), ormConfig)
 	if err != nil {
 		log.Fatal(err)
 	}

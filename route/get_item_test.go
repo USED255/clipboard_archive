@@ -17,7 +17,7 @@ func TestGetItems(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newItemReflect()
@@ -47,7 +47,7 @@ func TestGetItemsStartTimeQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newItemReflect()
@@ -79,7 +79,7 @@ func TestGetItemsStartTimeQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	database.Orm.Create(newItemReflect())
@@ -105,7 +105,7 @@ func TestGetItemsEndTimeQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newItemReflect()
@@ -137,7 +137,7 @@ func TestGetItemsEndTimeQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	database.Orm.Create(newItemReflect())
@@ -163,7 +163,7 @@ func TestGetItemsLimitQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newItemReflect()
@@ -199,7 +199,7 @@ func TestGetItemsLimitQueryError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	w := httptest.NewRecorder()
@@ -223,7 +223,7 @@ func TestGetItemsAllQuery(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newItemReflect()

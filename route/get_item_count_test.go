@@ -17,7 +17,7 @@ func TestGetItemCount(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	database.Orm.Create(newItemReflect())

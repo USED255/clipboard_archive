@@ -11,21 +11,8 @@ const Version = version
 var OrmConfig *gorm.Config
 var Orm *gorm.DB
 
-func Open(dsn string) error {
-	err = connectDatabase(dsn)
-	if err != nil {
-		return err
-	}
-	err = migrateVersion()
-	if err != nil {
-		//迁移失败
-		return err
-	}
-	return nil
-}
-
-func Open2(dialector gorm.Dialector, config *gorm.Config) error {
-	err = connectDatabase2(dialector, config)
+func Open(dialector gorm.Dialector, config *gorm.Config) error {
+	err = connectDatabase(dialector, config)
 	if err != nil {
 		return err
 	}

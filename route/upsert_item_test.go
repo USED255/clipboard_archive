@@ -20,7 +20,7 @@ func TestUpsertItem(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	item := newJsonItem()
@@ -70,7 +70,7 @@ func TestUpsertItemParamsError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	w := httptest.NewRecorder()
@@ -94,7 +94,7 @@ func TestUpsertItemBindJsonError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	w := httptest.NewRecorder()
@@ -119,7 +119,7 @@ func TestUpsertItemDecodeError(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	r := SetupRouter()
 
-	database.Open("file::memory:?cache=shared")
+	database.OpenMemoryDatabase()
 	defer database.Close()
 
 	w := httptest.NewRecorder()

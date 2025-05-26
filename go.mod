@@ -3,7 +3,7 @@ module github.com/used255/clipboard_archive/v3
 go 1.19
 
 require (
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.10.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
